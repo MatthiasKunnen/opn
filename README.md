@@ -1,6 +1,6 @@
 # OPN - a file opener
 
-`opn` allows you to pick the program to open a file with in the terminal.
+`opn`, pronounced _open_ (creative, I know), allows you to pick the program to open a file with in the terminal.
 
 The following approaches are used to determine the list of programs that are suggested for a file:
 - A `mimemap.conf` generated from the desktop files on your system. See [desktop files](#desktop-files)
