@@ -1,15 +1,22 @@
 package query
 
 import (
-	"fmt"
+	"github.com/MatthiasKunnen/opn/opnlib"
 	"github.com/spf13/cobra"
+	"log"
 )
 
 var fileCmd = &cobra.Command{
 	Use:   "file",
 	Short: "Queries the applications that can open a file",
-	Long:  `All software has versions. This is Hugo's`,
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
+		filePath := args[0]
+		mime, err := opnlib.GetFileMime(filePath)
+		if err != nil {
+			log.Fatalf("Failed to get MIME type of file %s: %v\n", filePath, err)
+		}
+
+		queryMime(mime)
 	},
 }
