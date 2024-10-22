@@ -7,7 +7,7 @@ import (
 )
 
 var fileCmd = &cobra.Command{
-	Use:   "file",
+	Use:   "file </path/to/file>",
 	Short: "Queries the applications that can open a file",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

@@ -11,14 +11,16 @@ var updateCacheCmd = &cobra.Command{
 	Short: "Updates the index that is used to look up MIME/application association",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		index, err := opnlib.GenerateIndex()
-		if err != nil {
-			log.Fatalf("Failed to generate index: %v", err)
+		opn := &opnlib.Opn{
+			SkipCache: true,
 		}
-
-		err = index.SaveIndex("")
+		err := opn.Load()
 		if err != nil {
-			log.Fatalf("Failed to save the newly generated cache: %v", err)
+			log.Fatalf("Failed generate index: %v", err)
+		}
+		err = opn.SaveIndex()
+		if err != nil {
+			log.Fatalf("Failed to save index: %v", err)
 		}
 
 		println("Cache successfully updated.")

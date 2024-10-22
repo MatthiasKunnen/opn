@@ -1,14 +1,18 @@
 package query
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/MatthiasKunnen/opn/opnlib"
 	"github.com/spf13/cobra"
+	"log"
+	"os"
 	"strings"
 )
 
 var mimeCmd = &cobra.Command{
-	Use:   "mime",
+	Use:   "mime <MimeType>",
 	Short: "Queries the applications associated with a MIME type",
 	Long:  `Returns the desktop IDs of the applications associated with the given mime type.`,
 	Args:  cobra.ExactArgs(1),
@@ -18,23 +22,31 @@ var mimeCmd = &cobra.Command{
 }
 
 func queryMime(mimeType string) {
-	index := opnlib.MustLoadIndex(skipCache, "")
-	desktopIds := index.Associations[mimeType]
-
-	if len(desktopIds) > 0 {
-		println(strings.Join(desktopIds, " "))
+	opn := &opnlib.Opn{
+		SkipCache: skipCache,
 	}
+	err := opn.Load()
+	switch {
+	case errors.Is(err, opnlib.FailedToSaveCache):
+		log.Printf("%v\n", err)
+	case err != nil:
+		log.Fatalf("Failed to load: %v", err)
+	}
+	result := opn.GetDesktopIdsForBroadMime(mimeType)
 
-	fmt.Printf("%s: No applications associated with this MIME type.\n", mimeType)
-
-	if mimeType = opnlib.GetBroaderMimeType(mimeType); mimeType != "" {
-		fmt.Println("Trying broader mime type.")
-		desktopIds := index.Associations[mimeType]
-
-		if len(desktopIds) > 0 {
-			fmt.Printf("%s: %s\n", mimeType, strings.Join(desktopIds, " "))
-		} else {
-			fmt.Printf("%s: No applications associated with this MIME type.\n", mimeType)
+	switch format {
+	case outputVerbose:
+		for _, item := range result {
+			if len(item.DesktopIds) == 0 {
+				fmt.Printf("%s: No associated applications\n", item.Mime)
+			} else {
+				fmt.Printf("%s: %s\n", item.Mime, strings.Join(item.DesktopIds, ", "))
+			}
+		}
+	case outputJson:
+		err := json.NewEncoder(os.Stdout).Encode(result)
+		if err != nil {
+			log.Fatalf("Failed to encode JSON: %v", err)
 		}
 	}
 }
