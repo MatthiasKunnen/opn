@@ -3,6 +3,7 @@
 `opn`, pronounced _open_ (creative, I know), allows you to pick the application to open a file with
 in the terminal from a list of preferred applications.
 
+![Example of opening a PDF file with opn](.github/example_open_pdf.png)
 
 ## How it works
 To determine the list of programs that are suggested for a file, the 
@@ -37,10 +38,9 @@ Specify the terminal to be launched using the `OPN_TERMINAL_COMMAND` environment
 - `OPN_TERMINAL_COMMAND="gnome-terminal --"`
 
 ## Usage
-For detailed usage, see `opn --help` or view [cli_docs/opn.md](./cli_docs/opn.md).
+Open a file using `opn file /path/to/file`.
 
-### Open file
-`opn file /path/to/file`
+For detailed usage, see `opn --help` or view the [CLI docs](./cli_docs/opn.md).
 
 ## TODO
 - Document integration with NNN
