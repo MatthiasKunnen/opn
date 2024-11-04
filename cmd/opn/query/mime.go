@@ -17,6 +17,9 @@ var mimeCmd = &cobra.Command{
 	Long:    `Returns the desktop IDs of the applications associated with the given mime type.`,
 	Args:    cobra.ExactArgs(1),
 	Example: `$ opn query mime application/pdf`,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		queryMime(args[0])
 	},
