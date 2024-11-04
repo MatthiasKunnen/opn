@@ -30,6 +30,10 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+func GetCommand() *cobra.Command {
+	return rootCmd
+}
+
 func init() {
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
 

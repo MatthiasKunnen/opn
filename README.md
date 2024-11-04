@@ -37,7 +37,7 @@ Specify the terminal to be launched using the `OPN_TERMINAL_COMMAND` environment
 - `OPN_TERMINAL_COMMAND="gnome-terminal --"`
 
 ## Usage
-For detailed usage, see `opn --help`.
+For detailed usage, see `opn --help` or view [cli_docs/opn.md](./cli_docs/opn.md).
 
 ### Open file
 `opn file /path/to/file`
