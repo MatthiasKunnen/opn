@@ -12,10 +12,11 @@ import (
 )
 
 var mimeCmd = &cobra.Command{
-	Use:   "mime <MimeType>",
-	Short: "Queries the applications associated with a MIME type",
-	Long:  `Returns the desktop IDs of the applications associated with the given mime type.`,
-	Args:  cobra.ExactArgs(1),
+	Use:     "mime <MimeType>",
+	Short:   "Queries the applications associated with a MIME type",
+	Long:    `Returns the desktop IDs of the applications associated with the given mime type.`,
+	Args:    cobra.ExactArgs(1),
+	Example: `$ opn query mime application/pdf`,
 	Run: func(cmd *cobra.Command, args []string) {
 		queryMime(args[0])
 	},
