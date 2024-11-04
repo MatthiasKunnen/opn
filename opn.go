@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/MatthiasKunnen/opn/cmd"
+	"github.com/MatthiasKunnen/opn/cmd/opn"
 )
 
 func main() {
-	cmd.Execute()
+	opn.Execute()
 }

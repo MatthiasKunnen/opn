@@ -1,4 +1,4 @@
-package cmd
+package opn
 
 import (
 	"bufio"
