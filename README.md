@@ -51,5 +51,4 @@ For detailed usage, see `opn --help` or view the [CLI docs](./cli_docs/opn.md).
 - Generate documentation from CLI help. Man page perhaps?
 - Add examples on how to change preferred applications.
 - Add compact format to `query` commands for use in scripts. Pending interest.
-- Localization, currently, all output is in English. Pending interest.
 - Support DBUS activation for starting applications. Pending interest.
