@@ -24,6 +24,7 @@ $ opn query file /path/to/file
 
 Get a list of applications that can open a MIME type.
 $ opn query mime text/html`,
+	DisableAutoGenTag: true,
 }
 
 func Execute() error {
