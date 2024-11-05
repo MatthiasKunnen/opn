@@ -10,6 +10,12 @@ Returns the desktop IDs of the applications associated with the given mime type.
 opn query mime <MimeType> [flags]
 ```
 
+### Examples
+
+```
+$ opn query mime application/pdf
+```
+
 ### Options
 
 ```
