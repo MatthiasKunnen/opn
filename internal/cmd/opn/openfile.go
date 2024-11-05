@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/MatthiasKunnen/opn/opnlib"
+	"github.com/MatthiasKunnen/opn/pkg/opnlib"
 	"github.com/MatthiasKunnen/xdg/desktop"
 	"github.com/spf13/cobra"
 	"log"

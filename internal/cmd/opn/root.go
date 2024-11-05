@@ -1,8 +1,8 @@
 package opn
 
 import (
-	"github.com/MatthiasKunnen/opn/cmd/opn/cache"
-	"github.com/MatthiasKunnen/opn/cmd/opn/query"
+	"github.com/MatthiasKunnen/opn/internal/cmd/opn/cache"
+	"github.com/MatthiasKunnen/opn/internal/cmd/opn/query"
 	"github.com/spf13/cobra"
 	"log"
 )

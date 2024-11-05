@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/MatthiasKunnen/opn/opnlib"
+	"github.com/MatthiasKunnen/opn/pkg/opnlib"
 	"github.com/spf13/cobra"
 	"log"
 	"os"

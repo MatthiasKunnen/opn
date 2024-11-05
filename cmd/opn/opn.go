@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/MatthiasKunnen/opn/cmd/opn"
+	"github.com/MatthiasKunnen/opn/internal/cmd/opn"
 )
 
 func main() {
