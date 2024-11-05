@@ -14,7 +14,7 @@ func main() {
 		log.Fatalf("Failed to get current working directory: %v", err)
 	}
 
-	outputDir := path.Join(workingDir, "cli_docs")
+	outputDir := path.Join(workingDir, "docs/cli")
 	err = gendocs.GenMdDocs(outputDir)
 	if err != nil {
 		log.Fatalf("Failed to generate documentation: %v", err)

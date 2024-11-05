@@ -40,7 +40,7 @@ Specify the terminal to be launched using the `OPN_TERMINAL_COMMAND` environment
 ## Usage
 Open a file using `opn file /path/to/file`.
 
-For detailed usage, see `opn --help` or view the [CLI docs](./cli_docs/opn.md).
+For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
 
 ## TODO
 - Document integration with NNN
