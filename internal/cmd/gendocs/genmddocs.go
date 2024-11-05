@@ -1,7 +1,6 @@
 package gendocs
 
 import (
-	"errors"
 	"fmt"
 	"github.com/MatthiasKunnen/opn/internal/cmd/opn"
 	"github.com/spf13/cobra/doc"
@@ -40,10 +39,8 @@ func GenMdDocs(outputDir string) error {
 		}
 	}
 
-	err = os.Mkdir(outputDir, 0755)
-	switch {
-	case errors.Is(err, os.ErrExist):
-	case err != nil:
+	err = os.MkdirAll(outputDir, 0755)
+	if err != nil {
 		return fmt.Errorf("GenMdDocs: failed to create output directory: %v", err)
 	}
 
