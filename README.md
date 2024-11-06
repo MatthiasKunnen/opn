@@ -5,6 +5,9 @@ in the terminal from a list of preferred applications.
 
 ![Example of opening a PDF file with opn](.github/example_open_pdf.png)
 
+## Installation
+See [Install.md](Install.md).
+
 ## How it works
 To determine the list of programs that are suggested for a file, the 
 [MIME Applications Specification](https://specifications.freedesktop.org/mime-apps-spec/1.0.1/)
