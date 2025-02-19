@@ -70,7 +70,8 @@ func GetBroaderMimeType(mime string) string {
 		"application/json",
 		"application/ld+json",
 		"application/xml",
-		"application/yaml":
+		"application/yaml",
+		"image/svg+xml":
 		return "text/plain"
 	case "text/plain":
 		return ""
