@@ -30,7 +30,7 @@ The user can then select the application to open the file with.
 
 Works by first obtaining the MIME type of the file and then finding all
 applications that can open it according to the MIME Applications Associations
-specification`,
+specification.`,
 	Example: `opn file foo.pdf`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

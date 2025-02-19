@@ -9,7 +9,7 @@ The user can then select the application to open the file with.
 
 Works by first obtaining the MIME type of the file and then finding all
 applications that can open it according to the MIME Applications Associations
-specification
+specification.
 
 ```
 opn file <filename> [flags]
