@@ -20,7 +20,7 @@ import (
 
 var skipCache bool
 
-var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?$`)
+var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([bh])?$`)
 
 var openFileCmd = &cobra.Command{
 	Use:   "file <filename>",
@@ -123,17 +123,39 @@ specification.`,
 
 		mainIndex := -1
 		actionIndex := -1
+		openHere := false
 		scanner := bufio.NewScanner(os.Stdin)
 	inputLoop:
 		for {
 			fmt.Printf(
-				"Choose the application to open %s with, by using the numbers above: ",
+				"Open %s with (?=help)[0]: ",
 				path.Base(filePath),
 			)
 			scanner.Scan()
 			text := scanner.Text()
 
 			switch {
+			case text == "":
+				mainIndex = 0
+				break inputLoop
+			case text == "h":
+				mainIndex = 0
+				openHere = true
+				break inputLoop
+			case text == "b":
+				mainIndex = 0
+				openHere = false
+				break inputLoop
+			case text == "?":
+				fmt.Println(`
+Choose the application to open the file with using the respective number.
+Optionally append either h or b to control stdin/stdout behavior.
+h(ere): execute program in this terminal. E.g. when opening with vim, this would launch vim in the
+current terminal.
+b(ackground) (default): launch the program in the background. When opening with vim, this would
+launch vim in a new terminal.
+
+If no number is entered, 0 is assumed.`)
 			case appSelectRe.MatchString(text):
 				matches := appSelectRe.FindStringSubmatch(text)
 				mainIndex, err = strconv.Atoi(matches[1])
@@ -176,6 +198,15 @@ specification.`,
 					}
 				}
 
+				if len(matches) > 2 {
+					switch matches[3] {
+					case "h":
+						openHere = true
+					case "b":
+						openHere = false
+					}
+				}
+
 				break inputLoop
 			}
 		}
@@ -213,7 +244,7 @@ specification.`,
 			},
 		})
 
-		if chosen.Entry.Terminal {
+		if chosen.Entry.Terminal && !openHere {
 			terminalCommand := os.Getenv("OPN_TERMINAL_COMMAND")
 			if terminalCommand == "" {
 				log.Fatal("Program needs to be opened in a terminal but OPN_TERMINAL_COMMAND" +
@@ -229,10 +260,21 @@ specification.`,
 		}
 
 		eCmd := exec.Command(arguments[0], arguments[1:]...)
-		fmt.Printf("%v\n", arguments)
-		err = eCmd.Start()
-		if err != nil {
-			log.Printf("Error starting command: %v\n", err)
+		if openHere {
+			// @todo Think about using syscall.Exec as this would replace the opn process and
+			//       release the resources. Gotchas are unknown.
+			eCmd.Stdin = os.Stdin
+			eCmd.Stdout = os.Stdout
+			eCmd.Stderr = os.Stderr
+			err = eCmd.Run()
+			if err != nil {
+				log.Fatalf("Error running command '%s': %v\n", arguments, err)
+			}
+		} else {
+			err = eCmd.Start()
+			if err != nil {
+				log.Fatalf("Error starting command '%s': %v\n", arguments, err)
+			}
 		}
 	},
 }
