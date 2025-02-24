@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/MatthiasKunnen/xdg/basedir"
 	"path"
+	"time"
 )
 
 type Opn struct {
@@ -38,7 +39,7 @@ func (opn *Opn) Load() error {
 	}
 
 	index, err := LoadIndex(filename)
-	if err == nil {
+	if err == nil && index.GeneratedOn.Add(24*time.Hour).After(time.Now()) {
 		opn.index = index
 	} else {
 		index, err = GenerateIndex()

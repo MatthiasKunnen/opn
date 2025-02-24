@@ -48,7 +48,6 @@ For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
 ## TODO
 - Document integration with NNN
 - Pacman/package manager hook to update cache
-- Update cache if older than x days?
 - Generate documentation from CLI help. Man page perhaps?
 - Add examples on how to change preferred applications.
 - Support DBUS activation for starting applications. Pending interest.
