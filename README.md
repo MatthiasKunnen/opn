@@ -36,9 +36,9 @@ Unfortunately, there is no specification yet on how to set a preferred terminal 
 Desktop Environments or systems without one so we use an environment variable to make `opn` aware of
 your preference.
 
-Specify the terminal to be launched using the `OPN_TERMINAL_COMMAND` environment variable. E.g:
-- `OPN_TERMINAL_COMMAND="foot"`
-- `OPN_TERMINAL_COMMAND="gnome-terminal --"`
+Specify the terminal to be launched using the `OPN_TERM_CMD` environment variable. E.g:
+- `OPN_TERM_CMD="foot"`
+- `OPN_TERM_CMD="gnome-terminal --"`
 
 ## Usage
 Open a file using `opn file /path/to/file`.

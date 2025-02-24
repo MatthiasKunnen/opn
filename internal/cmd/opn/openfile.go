@@ -245,15 +245,15 @@ If no number is entered, 0 is assumed.`)
 		})
 
 		if chosen.Entry.Terminal && !openHere {
-			terminalCommand := os.Getenv("OPN_TERMINAL_COMMAND")
+			terminalCommand := os.Getenv("OPN_TERM_CMD")
 			if terminalCommand == "" {
-				log.Fatal("Program needs to be opened in a terminal but OPN_TERMINAL_COMMAND" +
+				log.Fatal("Program needs to be opened in a terminal but OPN_TERM_CMD" +
 					" is not set. See opn file --help.")
 			}
 
 			terminalArgs, err := shellwords.Parse(terminalCommand)
 			if err != nil {
-				log.Fatalf("Failed to parse OPN_TERMINAL_COMMAND=%s: %v", terminalCommand, err)
+				log.Fatalf("Failed to parse OPN_TERM_CMD=%s: %v", terminalCommand, err)
 			}
 
 			arguments = append(terminalArgs, arguments...)
@@ -288,7 +288,7 @@ ATTACHING TO TERMINAL:
   application with index 3 in the same terminal. As a mnemonic, the h stands for here.
 
 ENVIRONMENT:
-  OPN_TERMINAL_COMMAND
+  OPN_TERM_CMD
     The command to use when starting an application that has Terminal=true.
     The arguments will be appended to this command.
     E.g. "foot", "gnome-terminal --".
