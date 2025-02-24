@@ -47,7 +47,6 @@ For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
 
 ## TODO
 - Document integration with NNN
-- Installation instructions
 - Pacman/package manager hook to update cache
 - Update cache if older than x days?
 - Generate documentation from CLI help. Man page perhaps?
