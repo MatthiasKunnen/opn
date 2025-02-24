@@ -281,6 +281,12 @@ If no number is entered, 0 is assumed.`)
 
 func init() {
 	openFileCmd.SetHelpTemplate(openFileCmd.HelpTemplate() + `
+ATTACHING TO TERMINAL:
+  Applications that need a terminal can be launched in the current terminal or be opened in a new
+  terminal. By default, applications are opened in a new terminal. This behavior can be changed by
+  appending 'h' to the index of the application to launch. For example, 3h will launch the
+  application with index 3 in the same terminal. As a mnemonic, the h stands for here.
+
 ENVIRONMENT:
   OPN_TERMINAL_COMMAND
     The command to use when starting an application that has Terminal=true.
