@@ -32,13 +32,24 @@ A simplified explanation:
 ## Terminal applications
 Some applications require a terminal to launch in. Examples of this include; vim, nano, nnn, and opn
 itself. These applications have `Terminal=true` in their respective desktop files.
-Unfortunately, there is no specification yet on how to set a preferred terminal emulator across
-Desktop Environments or systems without one so we use an environment variable to make `opn` aware of
-your preference.
+
+### Which terminal to open in?
+Unfortunately, there is no specification yet, though
+[one is being developed](https://gitlab.freedesktop.org/terminal-wg/specifications/-/merge_requests/3),
+on how to set a preferred terminal emulator across Desktop Environments or systems without one.
+This requires an environment variable to make `opn` aware of your preference.
 
 Specify the terminal to be launched using the `OPN_TERM_CMD` environment variable. E.g:
 - `OPN_TERM_CMD="foot"`
 - `OPN_TERM_CMD="gnome-terminal --"`
+
+### Attaching to terminal
+By default, applications are opened in a new terminal.
+This behavior can be controlled using either the `OPN_TERM_TARGET` environment variable or
+interactively by appending the target to the index of the application to launch.
+The target is either `h`, `b`, or not set, in which case `OPN_TERM_TARGET` will be used.
+`h` stands for _here_, and `b` stands for _background_.
+For example, 3h will launch the application with index 3 in the current terminal.
 
 ## Usage
 Open a file using `opn file /path/to/file`.

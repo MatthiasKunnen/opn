@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/mattn/go-shellwords"
 )
@@ -121,9 +122,13 @@ specification.`,
 			}
 		}
 
+		openHere := false
+		if os.Getenv("OPN_TERM_TARGET") == "h" {
+			openHere = true
+		}
+
 		mainIndex := -1
 		actionIndex := -1
-		openHere := false
 		scanner := bufio.NewScanner(os.Stdin)
 	inputLoop:
 		for {
@@ -147,15 +152,25 @@ specification.`,
 				openHere = false
 				break inputLoop
 			case text == "?":
-				fmt.Println(`
-Choose the application to open the file with using the respective number.
-Optionally append either h or b to control stdin/stdout behavior.
-h(ere): execute program in this terminal. E.g. when opening with vim, this would launch vim in the
-current terminal.
-b(ackground) (default): launch the program in the background. When opening with vim, this would
-launch vim in a new terminal.
+				var sb strings.Builder
+				sb.WriteString(`Choose the application to open the file with, using the respective number.
+If no number is entered, 0 is assumed.
 
-If no number is entered, 0 is assumed.`)
+Optionally append either h or b to control stdin/stdout behavior.
+h(ere)`)
+				if openHere {
+					sb.WriteString(" (current default)")
+				}
+				sb.WriteString(`: execute program in this terminal.
+  When opening with vim, this would launch vim in the current terminal.
+b(ackground)`)
+				if !openHere {
+					sb.WriteString(" (current default)")
+				}
+				sb.WriteString(`: launch the program in the background.
+  When opening with vim, this would launch vim in a new terminal.`)
+
+				fmt.Println(sb.String())
 			case appSelectRe.MatchString(text):
 				matches := appSelectRe.FindStringSubmatch(text)
 				mainIndex, err = strconv.Atoi(matches[1])
@@ -283,15 +298,22 @@ func init() {
 	openFileCmd.SetHelpTemplate(openFileCmd.HelpTemplate() + `
 ATTACHING TO TERMINAL:
   Applications that need a terminal can be launched in the current terminal or be opened in a new
-  terminal. By default, applications are opened in a new terminal. This behavior can be changed by
-  appending 'h' to the index of the application to launch. For example, 3h will launch the
-  application with index 3 in the same terminal. As a mnemonic, the h stands for here.
+  terminal. By default, applications are opened in a new terminal. This behavior can be controlled
+  using the OPN_TERM_TARGET environment variable or, interactively, by appending the target to the
+  index of the application to launch. The target is either 'h', 'b', or not set, in which case
+  'OPN_TERM_TARGET' will be used. 'h' stands for _here_, and 'b' stands for _background_.
+  For example, 3h will launch the application with index 3 in the current terminal.
 
 ENVIRONMENT:
   OPN_TERM_CMD
     The command to use when starting an application that has Terminal=true.
     The arguments will be appended to this command.
     E.g. "foot", "gnome-terminal --".
+  OPN_TERM_TARGET
+    The default target to open terminal applications in:
+      b, background (default), a new terminal will be spawned based on OPN_TERM_CMD.
+      h, here, the application will be opened in the current terminal.
+    The target can still be overwritten by appending the target to the application's index.
 `)
 	openFileCmd.Flags().BoolVar(
 		&skipCache,
