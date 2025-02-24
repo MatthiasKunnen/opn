@@ -52,5 +52,4 @@ For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
 - Update cache if older than x days?
 - Generate documentation from CLI help. Man page perhaps?
 - Add examples on how to change preferred applications.
-- Add compact format to `query` commands for use in scripts. Pending interest.
 - Support DBUS activation for starting applications. Pending interest.
