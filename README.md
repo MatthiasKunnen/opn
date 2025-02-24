@@ -5,6 +5,12 @@ in the terminal from a list of preferred applications.
 
 ![Example of opening a PDF file with opn](.github/example_open_pdf.svg)
 
+## Features
+- Provides a terminal interface with a list of supported applications that can open a file.
+- The list of supported applications is based on the well-established `.desktop` files.
+- bash/fish/zsh completions.
+- Opens both GUI and terminal applications.
+
 ## Installation
 See [Install.md](Install.md).
 
