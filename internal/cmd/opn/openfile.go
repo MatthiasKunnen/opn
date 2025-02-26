@@ -278,10 +278,13 @@ Current defaults:
 
 				if len(matches) > 2 {
 					switch matches[3] {
+					case "":
 					case "a":
 						openOverride = Attached
 					case "d":
 						openOverride = Detached
+					default:
+						log.Fatalf("Unknown target: '%s'. Exepected 'a' or 'd'.", matches[3])
 					}
 				}
 
