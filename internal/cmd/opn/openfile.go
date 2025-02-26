@@ -23,10 +23,10 @@ var skipCache bool
 
 var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([bh])?$`)
 
-type Target int
+type StartMode int
 
 const (
-	Unset Target = iota
+	Unset StartMode = iota
 	Attached
 	Detached
 )
@@ -130,12 +130,12 @@ specification.`,
 			}
 		}
 
-		targetConf := os.Getenv("OPN_TERM_TARGET")
-		openTermTarget := Attached
-		openGuiTarget := Detached
-		openOverride := Unset
+		startModeEnv := os.Getenv("OPN_START_MODE")
+		startModeTerm := Attached
+		startModeGui := Detached
+		startMode := Unset
 
-		for _, tc := range strings.Split(targetConf, ",") {
+		for _, tc := range strings.Split(startModeEnv, ",") {
 			if tc == "" {
 				continue
 			}
@@ -143,9 +143,9 @@ specification.`,
 			tcParts := strings.Split(tc, ":")
 			if len(tcParts) != 2 {
 				log.Fatalf(
-					"Invalid value of OPN_TERM_TARGET: '%s'. "+
-						"Each target should have its config separated by a single colon.",
-					targetConf,
+					"Invalid value of OPN_START_MODE: '%s'. "+
+						"The target conf must contain a single colon.",
+					startModeEnv,
 				)
 			}
 
@@ -153,12 +153,12 @@ specification.`,
 			case "gui":
 				switch tcParts[1] {
 				case "a":
-					openGuiTarget = Attached
+					startModeGui = Attached
 				case "d":
-					openGuiTarget = Detached
+					startModeGui = Detached
 				default:
 					log.Fatalf(
-						"Unknown target value in OPN_TERM_TARGET for gui: '%s'. "+
+						"Unknown start mode in OPN_START_MODE for gui: '%s'. "+
 							"Either 'a' or 'd' expected",
 						tcParts[1],
 					)
@@ -166,19 +166,19 @@ specification.`,
 			case "term":
 				switch tcParts[1] {
 				case "a":
-					openTermTarget = Attached
+					startModeTerm = Attached
 				case "d":
-					openTermTarget = Detached
+					startModeTerm = Detached
 				default:
 					log.Fatalf(
-						"Unknown target value in OPN_TERM_TARGET for terminal: '%s'. "+
+						"Unknown start mode in OPN_START_MODE for terminal: '%s'. "+
 							"Either 'a' or 'd' expected",
 						tcParts[1],
 					)
 				}
 			default:
 				log.Fatalf(
-					"Unknown target type in OPN_TERM_TARGET: %s. Either 'gui' or 'term' expected",
+					"Unknown target in OPN_START_MODE: '%s'. Either 'gui' or 'term' expected",
 					tcParts[0],
 				)
 			}
@@ -202,11 +202,11 @@ specification.`,
 				break inputLoop
 			case text == "a":
 				mainIndex = 0
-				openOverride = Attached
+				startMode = Attached
 				break inputLoop
 			case text == "d":
 				mainIndex = 0
-				openOverride = Detached
+				startMode = Detached
 				break inputLoop
 			case text == "?":
 				var sb strings.Builder
@@ -221,13 +221,13 @@ d(etached): launch the program detached from the terminal.
 
 Current defaults:
 `)
-				if openTermTarget == Attached {
+				if startModeTerm == Attached {
 					sb.WriteString("Terminal: attached\n")
 				} else {
 					sb.WriteString("Terminal: detached\n")
 				}
 
-				if openGuiTarget == Attached {
+				if startModeGui == Attached {
 					sb.WriteString("GUI: attached\n")
 				} else {
 					sb.WriteString("GUI: detached\n")
@@ -280,11 +280,11 @@ Current defaults:
 					switch matches[3] {
 					case "":
 					case "a":
-						openOverride = Attached
+						startMode = Attached
 					case "d":
-						openOverride = Detached
+						startMode = Detached
 					default:
-						log.Fatalf("Unknown target: '%s'. Exepected 'a' or 'd'.", matches[3])
+						log.Fatalf("Unknown start mode: '%s'. Exepected 'a' or 'd'.", matches[3])
 					}
 				}
 
@@ -325,15 +325,15 @@ Current defaults:
 			},
 		})
 
-		if openOverride == Unset {
+		if startMode == Unset {
 			if chosen.Entry.Terminal {
-				openOverride = openTermTarget
+				startMode = startModeTerm
 			} else {
-				openOverride = openGuiTarget
+				startMode = startModeGui
 			}
 		}
 
-		if chosen.Entry.Terminal && openOverride == Detached {
+		if chosen.Entry.Terminal && startMode == Detached {
 			terminalCommand := os.Getenv("OPN_TERM_CMD")
 			if terminalCommand == "" {
 				log.Fatal("Program needs to be opened in a new terminal but OPN_TERM_CMD" +
@@ -349,7 +349,7 @@ Current defaults:
 		}
 
 		eCmd := exec.Command(arguments[0], arguments[1:]...)
-		if openOverride == Attached {
+		if startMode == Attached {
 			// @todo Think about using syscall.Exec as this would replace the opn process and
 			//       release the resources. Gotchas are unknown.
 			eCmd.Stdin = os.Stdin
@@ -375,25 +375,25 @@ ATTACHING TO TERMINAL:
   terminal. By default, GUI applications are started detached from the terminal and terminal
   applications are opened in the current terminal. This behavior can be controlled interactively or
   using an environment variable.
-  Interactively, when choosing the application, optionally append the target to the index:
+  Interactively, when choosing the application, optionally append the start mode to the index:
     a attached, the application will be opened in the current terminal.
     d detached. GUI application will be detached, terminal applications will be opened in
       a new terminal based on 'OPN_TERM_CMD'.
   For example, 3h will launch the application with index 3 in the current terminal.
-  If no target is specified, 'OPN_TERM_TARGET' is used to determine the default.
+  If no start mode is specified, 'OPN_START_MODE' is used to determine the default.
 
 ENVIRONMENT:
+  OPN_START_MODE
+    Configures where to open applications.
+    Examples:
+      OPN_START_MODE="gui:d,term:a", the default, GUI applications are detached and terminal
+        applications will be opened in the current terminal.
+      OPN_START_MODE="gui:d,term:d", always detach.
+    The start mode can be overwritten by appending it to the application's index.
   OPN_TERM_CMD
     The command to use when starting an application that has Terminal=true.
     The arguments will be appended to this command.
     E.g. "foot", "gnome-terminal --".
-  OPN_TERM_TARGET
-    Configures where to open applications.
-    Examples:
-      OPN_TERM_TARGET="gui:d,term:a", the default, GUI applications are detached and terminal
-        applications will be opened in the current terminal.
-      OPN_TERM_TARGET="gui:d,term:d", always detach.
-    The target can be overwritten by appending the target to the application's index.
 `)
 	openFileCmd.Flags().BoolVar(
 		&skipCache,

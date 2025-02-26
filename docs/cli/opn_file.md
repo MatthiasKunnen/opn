@@ -34,35 +34,36 @@ Applications that need a terminal can be launched in the current terminal or be 
 terminal. By default, GUI applications are started detached from the terminal and terminal
 applications are opened in the current terminal.
 This behavior can be controlled interactively or using an environment variable.
-Interactively, when choosing the application, optionally append the target to the index:
+Interactively, when choosing the application, optionally append the start mode to the index:
 
 - `a`, attached, the application will be opened in the current terminal.
 - `d`, detached. GUI application will be detached, terminal applications will be opened in a new
   terminal based on [`OPN_TERM_CMD`](#opn_term_cmd).
 
 For example, 3h will launch the application with index 3 in the current terminal.
-If no target is specified, [`OPN_TERM_TARGET`](#opn_term_target) is used to determine the default.
+If no start mode is specified, [`OPN_START_MODE`](#opn_start_mode) is used to determine the
+default.
 
 ### Environment
 
-#### OPN_TERM_CMD
-The command to use when starting an application that has Terminal=true.
-The arguments will be appended to this command.
-E.g. `foot`, `gnome-terminal --`.
-
-#### OPN_TERM_TARGET
+#### OPN_START_MODE
 Configures where to open applications.
 
 ```shell
 # The default, GUI applications are detached and terminal applications will be opened in the
 # current terminal.
-OPN_TERM_TARGET="gui:d,term:a"
+OPN_START_MODE="gui:d,term:a"
 
 # Open both GUI and terminal applications are detached from the terminal.
-OPN_TERM_TARGET="gui:d,term:d"
+OPN_START_MODE="gui:d,term:d"
 ```
 
-The target can be overwritten by appending the target to the application's index.
+The start mode can be overwritten by appending it to the application's index.
+
+#### OPN_TERM_CMD
+The command to use when starting an application that has Terminal=true.
+The arguments will be appended to this command.
+E.g. `foot`, `gnome-terminal --`.
 
 ### SEE ALSO
 
