@@ -50,12 +50,9 @@ Specify the terminal to be launched using the `OPN_TERM_CMD` environment variabl
 - `OPN_TERM_CMD="gnome-terminal --"`
 
 ### Attaching to terminal
-By default, applications are opened in a new terminal.
-This behavior can be controlled using either the `OPN_TERM_TARGET` environment variable or
-interactively by appending the target to the index of the application to launch.
-The target is either `h`, `b`, or not set, in which case `OPN_TERM_TARGET` will be used.
-`h` stands for _here_, and `b` stands for _background_.
-For example, 3h will launch the application with index 3 in the current terminal.
+By default, GUI applications are started detached from the terminal and terminal applications are
+opened in the current terminal. For documentation on how to control this behavior, see
+[docs/cli/opn_file.md#attaching-to-terminal](./docs/cli/opn_file.md#attaching-to-terminal).
 
 ## Usage
 Open a file using `opn file /path/to/file`.

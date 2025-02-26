@@ -23,6 +23,14 @@ var skipCache bool
 
 var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([bh])?$`)
 
+type Target int
+
+const (
+	Unset Target = iota
+	Background
+	Here
+)
+
 var openFileCmd = &cobra.Command{
 	Use:   "file <filename>",
 	Short: "Open the given file",
@@ -122,9 +130,58 @@ specification.`,
 			}
 		}
 
-		openHere := false
-		if os.Getenv("OPN_TERM_TARGET") == "h" {
-			openHere = true
+		targetConf := os.Getenv("OPN_TERM_TARGET")
+		openTermTarget := Here
+		openGuiTarget := Background
+		openOverride := Unset
+
+		for _, tc := range strings.Split(targetConf, ",") {
+			if tc == "" {
+				continue
+			}
+
+			tcParts := strings.Split(tc, ":")
+			if len(tcParts) != 2 {
+				log.Fatalf(
+					"Invalid value of OPN_TERM_TARGET: '%s'. "+
+						"Each target should have its config separated by a single colon.",
+					targetConf,
+				)
+			}
+
+			switch tcParts[0] {
+			case "gui":
+				switch tcParts[1] {
+				case "h":
+					openGuiTarget = Here
+				case "b":
+					openGuiTarget = Background
+				default:
+					log.Fatalf(
+						"Unknown target value in OPN_TERM_TARGET for gui: '%s'. "+
+							"Either 'h' or 'b' expected",
+						tcParts[1],
+					)
+				}
+			case "term":
+				switch tcParts[1] {
+				case "h":
+					openTermTarget = Here
+				case "b":
+					openTermTarget = Background
+				default:
+					log.Fatalf(
+						"Unknown target value in OPN_TERM_TARGET for terminal: '%s'. "+
+							"Either 'h' or 'b' expected",
+						tcParts[1],
+					)
+				}
+			default:
+				log.Fatalf(
+					"Unknown target type in OPN_TERM_TARGET: %s. Either 'gui' or 'term' expected",
+					tcParts[0],
+				)
+			}
 		}
 
 		mainIndex := -1
@@ -145,11 +202,11 @@ specification.`,
 				break inputLoop
 			case text == "h":
 				mainIndex = 0
-				openHere = true
+				openOverride = Here
 				break inputLoop
 			case text == "b":
 				mainIndex = 0
-				openHere = false
+				openOverride = Background
 				break inputLoop
 			case text == "?":
 				var sb strings.Builder
@@ -157,18 +214,24 @@ specification.`,
 If no number is entered, 0 is assumed.
 
 Optionally append either h or b to control stdin/stdout behavior.
-h(ere)`)
-				if openHere {
-					sb.WriteString(" (current default)")
-				}
-				sb.WriteString(`: execute program in this terminal.
+h(ere): execute program in this terminal.
   When opening with vim, this would launch vim in the current terminal.
-b(ackground)`)
-				if !openHere {
-					sb.WriteString(" (current default)")
+b(ackground): launch the program in the background.
+  When opening with vim, this would launch vim in a new terminal.
+
+Current defaults:
+`)
+				if openTermTarget == Here {
+					sb.WriteString("Terminal: here\n")
+				} else {
+					sb.WriteString("Terminal: background\n")
 				}
-				sb.WriteString(`: launch the program in the background.
-  When opening with vim, this would launch vim in a new terminal.`)
+
+				if openGuiTarget == Here {
+					sb.WriteString("GUI: here\n")
+				} else {
+					sb.WriteString("GUI: background\n")
+				}
 
 				fmt.Println(sb.String())
 			case appSelectRe.MatchString(text):
@@ -216,9 +279,9 @@ b(ackground)`)
 				if len(matches) > 2 {
 					switch matches[3] {
 					case "h":
-						openHere = true
+						openOverride = Here
 					case "b":
-						openHere = false
+						openOverride = Background
 					}
 				}
 
@@ -259,10 +322,18 @@ b(ackground)`)
 			},
 		})
 
-		if chosen.Entry.Terminal && !openHere {
+		if openOverride == Unset {
+			if chosen.Entry.Terminal {
+				openOverride = openTermTarget
+			} else {
+				openOverride = openGuiTarget
+			}
+		}
+
+		if chosen.Entry.Terminal && openOverride == Background {
 			terminalCommand := os.Getenv("OPN_TERM_CMD")
 			if terminalCommand == "" {
-				log.Fatal("Program needs to be opened in a terminal but OPN_TERM_CMD" +
+				log.Fatal("Program needs to be opened in a new terminal but OPN_TERM_CMD" +
 					" is not set. See opn file --help.")
 			}
 
@@ -275,7 +346,7 @@ b(ackground)`)
 		}
 
 		eCmd := exec.Command(arguments[0], arguments[1:]...)
-		if openHere {
+		if openOverride == Here {
 			// @todo Think about using syscall.Exec as this would replace the opn process and
 			//       release the resources. Gotchas are unknown.
 			eCmd.Stdin = os.Stdin
@@ -298,11 +369,15 @@ func init() {
 	openFileCmd.SetHelpTemplate(openFileCmd.HelpTemplate() + `
 ATTACHING TO TERMINAL:
   Applications that need a terminal can be launched in the current terminal or be opened in a new
-  terminal. By default, applications are opened in a new terminal. This behavior can be controlled
-  using the OPN_TERM_TARGET environment variable or, interactively, by appending the target to the
-  index of the application to launch. The target is either 'h', 'b', or not set, in which case
-  'OPN_TERM_TARGET' will be used. 'h' stands for _here_, and 'b' stands for _background_.
+  terminal. By default, GUI applications are started detached from the terminal and terminal
+  applications are opened in the current terminal. This behavior can be controlled interactively or
+  using an environment variable.
+  Interactively, when choosing the application, optionally append the target to the index:
+    b background. GUI application will be detached, terminal applications will be opened in
+      a new terminal based on 'OPN_TERM_CMD'.
+    h here, the application will be opened in the current terminal.
   For example, 3h will launch the application with index 3 in the current terminal.
+  If no target is specified, 'OPN_TERM_TARGET' is used to determine the default.
 
 ENVIRONMENT:
   OPN_TERM_CMD
@@ -310,10 +385,12 @@ ENVIRONMENT:
     The arguments will be appended to this command.
     E.g. "foot", "gnome-terminal --".
   OPN_TERM_TARGET
-    The default target to open terminal applications in:
-      b, background (default), a new terminal will be spawned based on OPN_TERM_CMD.
-      h, here, the application will be opened in the current terminal.
-    The target can still be overwritten by appending the target to the application's index.
+    Configures where to open applications.
+    Examples:
+      OPN_TERM_TARGET="gui:b,term:h", the default, GUI applications are detached and terminal
+        applications will be opened in the current terminal.
+      OPN_TERM_TARGET="gui:b,term:b", always detach.
+    The target can be overwritten by appending the target to the application's index.
 `)
 	openFileCmd.Flags().BoolVar(
 		&skipCache,

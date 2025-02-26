@@ -31,24 +31,36 @@ opn file foo.pdf
 ### Attaching to terminal
 
 Applications that need a terminal can be launched in the current terminal or be opened in a new
-terminal. By default, applications are opened in a new terminal. This behavior can be controlled
-using the OPN_TERM_TARGET environment variable or, interactively, by appending the target to the
-index of the application to launch. The target is either 'h', 'b', or not set, in which case
-'OPN_TERM_TARGET' will be used. 'h' stands for _here_, and 'b' stands for _background_.
+terminal. By default, GUI applications are started detached from the terminal and terminal
+applications are opened in the current terminal.
+This behavior can be controlled interactively or using an environment variable.
+Interactively, when choosing the application, optionally append the target to the index:
+- `b`, background. GUI application will be detached, terminal applications will be opened in a new
+  terminal based on [`OPN_TERM_CMD`](#opn_term_cmd).
+- `h`, here, the application will be opened in the current terminal.
 For example, 3h will launch the application with index 3 in the current terminal.
+If no target is specified, [`OPN_TERM_TARGET`](#opn_term_target) is used to determine the default.
 
 ### Environment
 
 #### OPN_TERM_CMD
 The command to use when starting an application that has Terminal=true.
 The arguments will be appended to this command.
-E.g. "foot", "gnome-terminal --".
+E.g. `foot`, `gnome-terminal --`.
 
 #### OPN_TERM_TARGET
-The default target to open terminal applications in:
-`b`, background (default), a new terminal will be spawned based on `OPN_TERM_CMD`.
-`h`, here, the application will be opened in the current terminal.
-The target can still be overwritten by appending the target to the application's index.
+Configures where to open applications.
+
+```shell
+# The default, GUI applications are detached and terminal applications will be opened in the
+# current terminal.
+OPN_TERM_TARGET="gui:b,term:h"
+
+# Open both GUI and terminal applications are detached from the terminal.
+OPN_TERM_TARGET="gui:b,term:b"
+```
+
+The target can be overwritten by appending the target to the application's index.
 
 ### SEE ALSO
 
