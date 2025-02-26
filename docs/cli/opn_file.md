@@ -35,9 +35,11 @@ terminal. By default, GUI applications are started detached from the terminal an
 applications are opened in the current terminal.
 This behavior can be controlled interactively or using an environment variable.
 Interactively, when choosing the application, optionally append the target to the index:
-- `b`, background. GUI application will be detached, terminal applications will be opened in a new
+
+- `a`, attached, the application will be opened in the current terminal.
+- `d`, detached. GUI application will be detached, terminal applications will be opened in a new
   terminal based on [`OPN_TERM_CMD`](#opn_term_cmd).
-- `h`, here, the application will be opened in the current terminal.
+
 For example, 3h will launch the application with index 3 in the current terminal.
 If no target is specified, [`OPN_TERM_TARGET`](#opn_term_target) is used to determine the default.
 
@@ -54,10 +56,10 @@ Configures where to open applications.
 ```shell
 # The default, GUI applications are detached and terminal applications will be opened in the
 # current terminal.
-OPN_TERM_TARGET="gui:b,term:h"
+OPN_TERM_TARGET="gui:d,term:a"
 
 # Open both GUI and terminal applications are detached from the terminal.
-OPN_TERM_TARGET="gui:b,term:b"
+OPN_TERM_TARGET="gui:d,term:d"
 ```
 
 The target can be overwritten by appending the target to the application's index.
