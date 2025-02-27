@@ -10,6 +10,7 @@ in the terminal from a list of preferred applications.
 - The list of supported applications is based on the well-established `.desktop` files.
 - bash/fish/zsh completions.
 - Opens both GUI and terminal applications.
+- Integrates with nnn, see [integrations](./integrations/README.md).
 
 ## Installation
 See [Install.md](Install.md).

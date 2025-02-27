@@ -15,3 +15,6 @@
     opn completion fish > "/usr/share/fish/vendor_completions.d/opn.fish"
     opn completion zsh > "/usr/share/zsh/site-functions/_opn"
     ```
+
+## Integrations
+See [integrations/README.md](./integrations/README.md).
