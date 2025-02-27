@@ -94,10 +94,6 @@ specification.`,
 					continue
 				}
 
-				if !entry.Exec.CanOpenFiles() {
-					continue
-				}
-
 				desktopInfo := &DesktopInfo{
 					Id:       desktopId,
 					FilePath: desktopFilePath,
@@ -107,7 +103,9 @@ specification.`,
 				desktopFiles = append(desktopFiles, desktopInfo)
 
 				for _, action := range entry.Actions {
-					if !action.Exec.CanOpenFiles() {
+					if entry.Exec.CanOpenFiles() && !action.Exec.CanOpenFiles() {
+						// If this subaction does not have a field code indicating file opening
+						// support, but the main action does, assume this is on purpose.
 						continue
 					}
 
@@ -329,6 +327,16 @@ Current defaults:
 				return []string{filePath}
 			},
 		})
+
+		if !execVal.CanOpenFiles() {
+			// Not ideal, we don't know for sure if the program supports being launched with paths
+			// in the arguments. Unfortunately, programs don't always follow the spec.
+			log.Printf(
+				"Warning: %s does not explicitly declare support for opening a file. "+
+					"It is missing a field code in the Exec value. "+
+					"The path will be added as last argument.\n", chosen.Id)
+			arguments = append(arguments, filePath)
+		}
 
 		if startMode == Unset {
 			if chosen.Entry.Terminal {
