@@ -70,8 +70,9 @@ specification.`,
 		desktopFiles := make([]*DesktopInfo, 0)
 		desktopIdsSet := make(map[string]bool)
 
-		for mime != "" {
-			for _, desktopId := range opn.GetDesktopIdsForMime(mime) {
+		mimeExpansion := mime
+		for mimeExpansion != "" {
+			for _, desktopId := range opn.GetDesktopIdsForMime(mimeExpansion) {
 				if desktopIdsSet[desktopId] {
 					continue
 				}
@@ -114,7 +115,11 @@ specification.`,
 				}
 			}
 
-			mime = opnlib.GetBroaderMimeType(mime)
+			mimeExpansion = opnlib.GetBroaderMimeType(mimeExpansion)
+		}
+
+		if len(desktopFiles) == 0 {
+			log.Fatalf("No applications found that can open \"%s\"", mime)
 		}
 
 		for index, desktopFile := range slices.Backward(desktopFiles) {
