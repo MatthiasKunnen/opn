@@ -211,6 +211,8 @@ specification.`,
 				mainIndex = 0
 				startMode = Detached
 				break inputLoop
+			case text == "q":
+				return
 			case text == "?":
 				var sb strings.Builder
 				sb.WriteString(`Choose the application to open the file with, using the respective number.
@@ -236,6 +238,7 @@ Current defaults:
 					sb.WriteString("GUI: detached\n")
 				}
 
+				sb.WriteString("\nq to quit\n")
 				fmt.Println(sb.String())
 			case appSelectRe.MatchString(text):
 				matches := appSelectRe.FindStringSubmatch(text)
