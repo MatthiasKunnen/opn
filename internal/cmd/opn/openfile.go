@@ -21,7 +21,7 @@ import (
 
 var skipCache bool
 
-var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([bh])?$`)
+var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([ad])?$`)
 
 type StartMode int
 
