@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/mattn/go-shellwords"
 )
@@ -376,6 +377,10 @@ Current defaults:
 				log.Fatalf("Error running command '%s': %v\n", arguments, err)
 			}
 		} else {
+			eCmd.SysProcAttr = &syscall.SysProcAttr{
+				Setsid: true, // Start new session
+			}
+
 			err = eCmd.Start()
 			if err != nil {
 				log.Fatalf("Error starting command '%s': %v\n", arguments, err)
