@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/MatthiasKunnen/opn/pkg/opnlib"
 	"github.com/MatthiasKunnen/xdg/desktop"
+	"github.com/mattn/go-shellwords"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -16,8 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
-
-	"github.com/mattn/go-shellwords"
 )
 
 var skipCache bool
