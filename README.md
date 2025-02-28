@@ -10,7 +10,9 @@ in the terminal from a list of preferred applications.
 - The list of supported applications is based on the well-established `.desktop` files.
 - bash/fish/zsh completions.
 - Opens both GUI and terminal applications.
-- Integrates with nnn, see [integrations](./integrations/README.md).
+- Integrates with various tools such as:
+  - [nnn](./integrations/README.md#nnn).
+  - [JetBrains IDEs](./integrations/README.md#jetbrains-ides).
 
 ## Installation
 See [Install.md](Install.md).
