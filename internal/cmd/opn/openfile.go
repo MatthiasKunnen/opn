@@ -384,6 +384,10 @@ Current defaults:
 			if err != nil {
 				log.Fatalf("Error starting command '%s': %v\n", arguments, err)
 			}
+			err := eCmd.Process.Release()
+			if err != nil {
+				log.Fatalf("Failed to release process: %v\n", err)
+			}
 		}
 	},
 }
