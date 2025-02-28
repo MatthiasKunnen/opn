@@ -1,11 +1,14 @@
 package opn
 
 import (
+	"fmt"
 	"github.com/MatthiasKunnen/opn/internal/cmd/opn/cache"
 	"github.com/MatthiasKunnen/opn/internal/cmd/opn/query"
 	"github.com/spf13/cobra"
 	"log"
 )
+
+var versionRequested = false
 
 var rootCmd = &cobra.Command{
 	Use:   "opn",
@@ -25,6 +28,17 @@ $ opn query file /path/to/file
 Get a list of applications that can open a MIME type.
 $ opn query mime text/html`,
 	DisableAutoGenTag: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if versionRequested {
+			fmt.Println("opn version 0.3.0")
+			return
+		}
+
+		err := cmd.Help()
+		if err != nil {
+			log.Fatalf("Error printing help information: %v\n", err)
+		}
+	},
 }
 
 func Execute() error {
@@ -41,4 +55,5 @@ func init() {
 	rootCmd.AddCommand(cache.CacheCmd)
 	rootCmd.AddCommand(openFileCmd)
 	rootCmd.AddCommand(query.QueryCmd)
+	rootCmd.Flags().BoolVar(&versionRequested, "version", false, "Version info")
 }
