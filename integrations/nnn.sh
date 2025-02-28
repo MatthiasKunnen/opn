@@ -16,7 +16,7 @@
 #
 # Required configuration of opn:
 #   1. Install opn, see https://github.com/MatthiasKunnen/opn/blob/master/Install.md
-#   2. Set OPN_TERM to configure your preferred terminal.
+#   2. Set OPN_TERM_CMD to configure your preferred terminal.
 #      E.g. "foot" or "gnome-terminal --".
 #      See https://github.com/MatthiasKunnen/opn?tab=readme-ov-file#terminal-applications
 
