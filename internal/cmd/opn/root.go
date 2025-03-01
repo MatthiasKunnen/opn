@@ -30,7 +30,7 @@ $ opn query mime text/html`,
 	DisableAutoGenTag: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if versionRequested {
-			fmt.Println("opn version 0.3.0")
+			fmt.Println("opn version 0.3.1")
 			return
 		}
 
