@@ -48,9 +48,10 @@ Unfortunately, there is no specification yet, though
 on how to set a preferred terminal emulator across Desktop Environments or systems without one.
 This requires an environment variable to make `opn` aware of your preference.
 
-Specify the terminal to be launched using the `OPN_TERM_CMD` environment variable. E.g:
-- `OPN_TERM_CMD="foot"`
-- `OPN_TERM_CMD="gnome-terminal --"`
+Specify the terminal to be launched using the `TERMINAL_COMMAND` or `OPN_TERM_CMD` environment
+variable. The latter takes precedence. E.g:
+- `foot`
+- `gnome-terminal --`
 
 ### Attaching to terminal
 By default, GUI applications are started detached from the terminal and terminal applications are

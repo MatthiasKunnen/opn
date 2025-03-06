@@ -65,6 +65,9 @@ The command to use when starting an application that has Terminal=true.
 The arguments will be appended to this command.
 E.g. `foot`, `gnome-terminal --`.
 
+#### TERMINAL_COMMAND
+Lower priority alias for [OPN_TERM_CMD](#opn_term_cmd).
+
 ### SEE ALSO
 
 * [opn](opn.md)	 - opn, a fast terminal file opener

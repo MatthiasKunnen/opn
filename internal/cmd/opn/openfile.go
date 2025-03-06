@@ -350,10 +350,14 @@ Current defaults:
 		}
 
 		if chosen.Entry.Terminal && startMode == Detached {
-			terminalCommand := os.Getenv("OPN_TERM_CMD")
-			if terminalCommand == "" {
-				log.Fatal("Program needs to be opened in a new terminal but OPN_TERM_CMD" +
-					" is not set. See opn file --help.")
+			terminalCommand := os.Getenv("TERMINAL_COMMAND")
+			opnTermCmd := os.Getenv("OPN_TERM_CMD")
+			switch {
+			case opnTermCmd != "":
+				terminalCommand = opnTermCmd
+			case terminalCommand == "":
+				log.Fatal("Program needs to be opened in a new terminal but OPN_TERM_CMD " +
+					"nor TERMINAL_COMMAND is set. See opn file --help.")
 			}
 
 			terminalArgs, err := shellwords.Parse(terminalCommand)
@@ -418,6 +422,8 @@ ENVIRONMENT:
     The command to use when starting an application that has Terminal=true.
     The arguments will be appended to this command.
     E.g. "foot", "gnome-terminal --".
+  TERMINAL_COMMAND
+    Lower priority alias for OPN_TERM_CMD.
 `)
 	openFileCmd.Flags().BoolVar(
 		&skipCache,
