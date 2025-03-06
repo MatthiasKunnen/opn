@@ -13,6 +13,7 @@ in the terminal from a list of preferred applications.
 - Integrates with various tools such as:
   - [nnn](./integrations/README.md#nnn).
   - [JetBrains IDEs](./integrations/README.md#jetbrains-ides).
+  - [xdg-open](./integrations/README.md#xdg-open).
 
 ## Installation
 See [Install.md](Install.md).

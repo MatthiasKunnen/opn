@@ -4,8 +4,16 @@ This document describes how `opn` can be integrated with other tools.
 Table of contents:
 - [JetBrains IDEs](#jetbrains-ides)
 - [nnn](#nnn), the terminal file manager
+- [xdg-open](#xdg-open), an opener used by many applications.
 
 ## JetBrains IDEs
+
+### Replacing xdg-open
+The _Open in associated application_ action in JetBrains IDEs uses `xdg-open`.
+Replacing `xdg-open` is an easy way to make your IDE use `opn`.
+See [xdg-open integration](#xdg-open).
+
+### Custom shortcut
 A JetBrains IDE shortcut can be configured to show `opn` for a selected or open file.
 
 1. Open settings > Tools > External tools, click on the `+` icon, and
@@ -39,3 +47,31 @@ A JetBrains IDE shortcut can be configured to show `opn` for a selected or open 
 
    This is usually done in `.bashrc`/`.zshrc`/...
 1. Done. Now, when you open a file in nnn (default Enter), `opn` will be used.
+
+## xdg-open
+`xdg-open` is a command line tool that is used as an opener by many applications. 
+
+It can be replaced with a custom script that uses `opn`.
+Place the script in a location that is earlier in the `$PATH` than `/usr/bin`,
+e.g. `/usr/local/bin`.
+While the exact contents of the script will depend on the emulator used, here is an example:
+
+```shell
+#!/usr/bin/env bash
+
+if [ -t 0 ]; then
+	opn file "$@"
+else
+	# If we are not in a terminal, launch a terminal to show opn.
+	# We specify to open everything detached so the terminal closes after launching.
+	OPN_START_MODE="gui:d,term:d" foot -a launcher opn file "$@"
+fi
+```
+
+Here, the _picker terminal_ is closed after the application is launched, however, this does not
+need to be the case.
+
+This specific example can be combined with the following Sway config to make the launcher float:
+```
+for_window [app_id="^launcher$"] floating enable, sticky enable, resize set 30 ppt 60 ppt, border pixel 10
+```
