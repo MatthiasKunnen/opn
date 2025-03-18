@@ -61,15 +61,25 @@ While the exact contents of the script will depend on the emulator used, here is
 
 if [ -t 0 ]; then
 	opn file "$@"
+	status=$?
 else
 	# If we are not in a terminal, launch a terminal to show opn.
 	# We specify to open everything detached so the terminal closes after launching.
 	OPN_START_MODE="gui:d,term:d" foot -a launcher opn file "$@"
+	status=$?
 fi
+
+# Display any error messages
+if [ $status -eq 0 ]; then
+	exit 0
+fi
+
+read -rsn1 -p"Press any key to close";echo
 ```
 
 Here, the _picker terminal_ is closed after the application is launched, however, this does not
 need to be the case.
+An alternative is to remove the `OPN_START_MODE` or explicitly set it to `gui:a,term:a`.
 
 This specific example can be combined with the following Sway config to make the launcher float:
 ```
