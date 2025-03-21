@@ -410,21 +410,28 @@ ENVIRONMENT:
 
 func startDetached(isTerminal bool, arguments []string) {
 	if isTerminal {
-		terminalCommand := os.Getenv("TERMINAL_COMMAND")
-		opnTermCmd := os.Getenv("OPN_TERM_CMD")
-		switch {
-		case opnTermCmd != "":
-			terminalCommand = opnTermCmd
-		case terminalCommand == "":
-			log.Fatal(
-				"Program needs to be opened in a new terminal but OPN_TERM_CMD " +
-					"nor TERMINAL_COMMAND is set. See opn file --help.",
-			)
+		terminalEnvVars := []string{"OPN_TERM_CMD", "TERMINAL_COMMAND"}
+		var terminalArgs []string
+
+		for _, envVar := range terminalEnvVars {
+			envVal := os.Getenv(envVar)
+			if envVal == "" {
+				continue
+			}
+
+			parsedArgs, err := shellwords.Parse(envVal)
+			if err != nil {
+				log.Fatalf("Failed to parse %s=%s: %v", envVar, envVal, err)
+			}
+			terminalArgs = parsedArgs
+			break
 		}
 
-		terminalArgs, err := shellwords.Parse(terminalCommand)
-		if err != nil {
-			log.Fatalf("Failed to parse OPN_TERM_CMD=%s: %v", terminalCommand, err)
+		if terminalArgs == nil {
+			log.Fatalf(
+				"Program needs to be opened in a new terminal but none of these environment variables are set: %s. See opn file --help. \n",
+				strings.Join(terminalEnvVars, ", "),
+			)
 		}
 
 		if util.ParentIsShell() {
