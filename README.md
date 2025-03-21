@@ -65,7 +65,6 @@ Open a file using `opn file /path/to/file`.
 For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
 
 ## TODO
-- Document integration with NNN
 - Pacman/package manager hook to update cache
 - Add examples on how to change preferred applications.
 - Support DBUS activation for starting applications. Pending interest.
