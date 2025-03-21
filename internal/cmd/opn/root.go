@@ -54,6 +54,7 @@ func init() {
 
 	rootCmd.AddCommand(cache.CacheCmd)
 	rootCmd.AddCommand(openFileCmd)
+	rootCmd.AddCommand(openWithSignalCmd)
 	rootCmd.AddCommand(query.QueryCmd)
 	rootCmd.Flags().BoolVar(&versionRequested, "version", false, "Version info")
 }

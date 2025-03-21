@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/MatthiasKunnen/opn/internal/util"
 	"github.com/MatthiasKunnen/opn/pkg/opnlib"
 	"github.com/MatthiasKunnen/xdg/desktop"
 	"github.com/mattn/go-shellwords"
@@ -12,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
@@ -349,27 +351,9 @@ Current defaults:
 			}
 		}
 
-		if chosen.Entry.Terminal && startMode == Detached {
-			terminalCommand := os.Getenv("TERMINAL_COMMAND")
-			opnTermCmd := os.Getenv("OPN_TERM_CMD")
-			switch {
-			case opnTermCmd != "":
-				terminalCommand = opnTermCmd
-			case terminalCommand == "":
-				log.Fatal("Program needs to be opened in a new terminal but OPN_TERM_CMD " +
-					"nor TERMINAL_COMMAND is set. See opn file --help.")
-			}
-
-			terminalArgs, err := shellwords.Parse(terminalCommand)
-			if err != nil {
-				log.Fatalf("Failed to parse OPN_TERM_CMD=%s: %v", terminalCommand, err)
-			}
-
-			arguments = append(terminalArgs, arguments...)
-		}
-
-		eCmd := exec.Command(arguments[0], arguments[1:]...)
-		if startMode == Attached {
+		switch startMode {
+		case Attached:
+			eCmd := exec.Command(arguments[0], arguments[1:]...)
 			// @todo Think about using syscall.Exec as this would replace the opn process and
 			//       release the resources. Gotchas are unknown.
 			eCmd.Stdin = os.Stdin
@@ -379,19 +363,10 @@ Current defaults:
 			if err != nil {
 				log.Fatalf("Error running command '%s': %v\n", arguments, err)
 			}
-		} else {
-			eCmd.SysProcAttr = &syscall.SysProcAttr{
-				Setsid: true, // Start new session
-			}
-
-			err = eCmd.Start()
-			if err != nil {
-				log.Fatalf("Error starting command '%s': %v\n", arguments, err)
-			}
-			err := eCmd.Process.Release()
-			if err != nil {
-				log.Fatalf("Failed to release process: %v\n", err)
-			}
+		case Detached:
+			startDetached(chosen.Entry.Terminal, arguments)
+		default:
+			log.Fatalln("Startmode not configured")
 		}
 	},
 }
@@ -431,4 +406,122 @@ ENVIRONMENT:
 		false,
 		"Do not use the cache. Instead, all lookups are performed on the file system.",
 	)
+}
+
+func startDetached(isTerminal bool, arguments []string) {
+	if isTerminal {
+		terminalCommand := os.Getenv("TERMINAL_COMMAND")
+		opnTermCmd := os.Getenv("OPN_TERM_CMD")
+		switch {
+		case opnTermCmd != "":
+			terminalCommand = opnTermCmd
+		case terminalCommand == "":
+			log.Fatal(
+				"Program needs to be opened in a new terminal but OPN_TERM_CMD " +
+					"nor TERMINAL_COMMAND is set. See opn file --help.",
+			)
+		}
+
+		terminalArgs, err := shellwords.Parse(terminalCommand)
+		if err != nil {
+			log.Fatalf("Failed to parse OPN_TERM_CMD=%s: %v", terminalCommand, err)
+		}
+
+		if util.ParentIsShell() {
+			arguments = append(terminalArgs, arguments...)
+		} else {
+			// If the parent process is not a shell, assume it is a terminal that will close
+			// immediately after opn exits. This risks taking out the newly launched detached
+			// program.
+			// To prevent this, we need to make sure the program is launched before exiting.
+			startDetachedWithStartSignaling(terminalArgs, arguments)
+			return
+		}
+	}
+
+	eCmd := exec.Command(arguments[0], arguments[1:]...)
+	eCmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true, // Start new session
+	}
+
+	err := eCmd.Start()
+	if err != nil {
+		log.Fatalf("Error starting command '%s': %v\n", arguments, err)
+	}
+
+	err = eCmd.Process.Release()
+	if err != nil {
+		log.Fatalf("Failed to release process: %v\n", err)
+	}
+}
+
+// startDetachedWithStartSignaling will start a terminal program in a new terminal.
+// See the description in openWithSignalCmd.
+func startDetachedWithStartSignaling(terminalArgs []string, launchArgs []string) {
+	fifoPath, err := createFifo()
+	if err != nil {
+		log.Fatalf("Error creating FIFO: %v\n", err)
+	}
+
+	selfExe, err := os.Executable()
+	if err != nil {
+		log.Fatalf("Failed to determine opn's path: %v\n", err)
+	}
+
+	terminalProgram := terminalArgs[0]
+	args := make([]string, 0, len(terminalArgs)+len(launchArgs)+2)
+	args = append(args, terminalArgs[1:]...)
+	args = append(args, selfExe, "openwithsig", fifoPath)
+	args = append(args, launchArgs...)
+
+	eCmd := exec.Command(terminalProgram, args...)
+	eCmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true, // Start new session
+	}
+
+	err = eCmd.Start()
+	if err != nil {
+		log.Fatalf("Error starting command '%s': %v\n", launchArgs, err)
+	}
+
+	fifo, err := os.Open(fifoPath)
+	if err != nil {
+		log.Printf("failed to open fifo file: %v\n", err)
+	}
+	defer fifo.Close()
+
+	buf := make([]byte, 1)
+	if _, err := fifo.Read(buf); err != nil {
+		log.Printf("Failed to receive start signal: %v\n", err)
+	}
+
+	err = eCmd.Process.Release()
+	if err != nil {
+		log.Fatalf("Failed to release process: %v\n", err)
+	}
+}
+
+func createFifo() (string, error) {
+	var fifoPath string
+existsLoop:
+	for i := 0; i < 5; i++ {
+		filename := util.RandString(10)
+		testPath := filepath.Join(os.TempDir(), filename)
+		err := syscall.Mkfifo(testPath, 0600)
+		switch {
+		case err == nil:
+			fifoPath = testPath
+			break existsLoop
+		case errors.Is(err, os.ErrExist):
+			continue
+		default:
+			return "", fmt.Errorf("Error creating fifo: %w\n", err)
+		}
+	}
+
+	if fifoPath == "" {
+		return "", fmt.Errorf("failed to create fifo, files already exist")
+	}
+
+	return fifoPath, nil
 }
