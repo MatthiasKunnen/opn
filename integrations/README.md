@@ -58,6 +58,8 @@ While the exact contents of the script will depend on the emulator used, here is
 
 ```shell
 #!/usr/bin/env bash
+# xdg-open can be called without your environment file being sourced so set the terminal:
+export OPN_TERM_CMD="gnome-terminal --"
 
 if [ -t 0 ]; then
 	opn file "$@"
