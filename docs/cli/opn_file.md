@@ -7,9 +7,14 @@ Open the given file
 Looks up and presents all applications that can open this file.
 The user can then select the application to open the file with.
 
-Works by first obtaining the MIME type of the file and then finding all
+Works by first determining the MIME type of the file and then finding all
 applications that can open it according to the MIME Applications Associations
 specification.
+
+The MIME type is determined in this order:
+1. The value specified using the `--mime-type` option.
+2. The value of the extended file attribute `user.mime`, if it exists.
+3. The value reported by the relevant utility, `xdg-query` or `file`.
 
 ```
 opn file <filename> [flags]

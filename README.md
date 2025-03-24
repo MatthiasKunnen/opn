@@ -14,6 +14,7 @@ in the terminal from a list of preferred applications.
   - [nnn](./integrations/README.md#nnn)
   - [JetBrains IDEs](./integrations/README.md#jetbrains-ides)
   - [xdg-open](./integrations/README.md#xdg-open)
+- The MIME type of a file can be explicitly set using extended file attributes.
 
 ## Installation
 See [Install.md](Install.md).
@@ -63,6 +64,26 @@ opened in the current terminal. For documentation on how to control this behavio
 Open a file using `opn file /path/to/file`.
 
 For detailed usage, see `opn --help` or view the [CLI docs](./docs/cli/opn.md).
+
+## Setting the MIME type explicitly
+
+### Using the `--mime-type` option
+When opening a file, explicitly specifying its MIME type is possible by using the
+`--mime-type` option. E.g.:
+```
+opn file --mime-type text/plain go.mod
+```
+
+### Explicit MIME type using extended file system attributes
+`opn` reads the `user.mime` extended file attribute if supported, to determine the MIME type.
+This allows a file to be permanently marked as having a specific type.
+
+Example of setting the attribute, explicitly state that the `go.mod` file has the text/plain type:
+```
+setfattr -n user.mime -v text/plain go.mod
+```
+
+See [Shared MIME info, Storing the MIME type using Extended Attributes](https://specifications.freedesktop.org/shared-mime-info-spec/0.21/ar01s02.html#id-1.3.13).
 
 ## TODO
 - Pacman/package manager hook to update cache

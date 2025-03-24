@@ -8,6 +8,7 @@ import (
 	"github.com/MatthiasKunnen/opn/pkg/opnlib"
 	"github.com/MatthiasKunnen/xdg/desktop"
 	"github.com/mattn/go-shellwords"
+	"github.com/pkg/xattr"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
@@ -21,7 +22,7 @@ import (
 	"syscall"
 )
 
-var mimeTypeOverride string
+var mime string
 var skipCache bool
 
 var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([ad])?$`)
@@ -40,9 +41,14 @@ var openFileCmd = &cobra.Command{
 	Long: `Looks up and presents all applications that can open this file.
 The user can then select the application to open the file with.
 
-Works by first obtaining the MIME type of the file and then finding all
+Works by first determining the MIME type of the file and then finding all
 applications that can open it according to the MIME Applications Associations
-specification.`,
+specification.
+
+The MIME type is determined in this order:
+1. The value specified using the --mime-type option.
+2. The value of the extended file attribute user.mime, if it exists.
+3. The value reported by the relevant utility, xdg-query or file.`,
 	Example: `opn file foo.pdf`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -58,14 +64,18 @@ specification.`,
 		}
 
 		filePath := args[0]
-		var mime string
-		if mimeTypeOverride == "" {
+		if mime == "" {
+			// If not overriden by --mime-type, try to get extended file attribute
+			var attrMime []byte
+			if attrMime, err = xattr.Get(filePath, "user.mime"); err == nil {
+				mime = string(attrMime)
+			}
+		}
+		if mime == "" {
 			mime, err = opnlib.GetFileMime(filePath)
 			if err != nil {
 				log.Fatalf("Failed to get MIME type of file %s: %v\n", filePath, err)
 			}
-		} else {
-			mime = mimeTypeOverride
 		}
 
 		type DesktopInfo struct {
@@ -413,7 +423,7 @@ ENVIRONMENT:
 		"Do not use the cache. Instead, all lookups are performed on the file system.",
 	)
 	openFileCmd.Flags().StringVar(
-		&mimeTypeOverride,
+		&mime,
 		"mime-type",
 		"",
 		"Set the mime type of the file and skip automatic determination.",
