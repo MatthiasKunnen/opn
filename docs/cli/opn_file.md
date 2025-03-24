@@ -24,8 +24,9 @@ opn file foo.pdf
 ### Options
 
 ```
-  -h, --help         help for file
-      --skip-cache   Do not use the cache. Instead, all lookups are performed on the file system.
+  -h, --help               help for file
+      --mime-type string   Set the mime type of the file and skip automatic determination.
+      --skip-cache         Do not use the cache. Instead, all lookups are performed on the file system.
 ```
 
 ### Attaching to terminal

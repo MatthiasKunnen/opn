@@ -21,6 +21,7 @@ import (
 	"syscall"
 )
 
+var mimeTypeOverride string
 var skipCache bool
 
 var appSelectRe = regexp.MustCompile(`^(\d+)(?:\.(\d+))?([ad])?$`)
@@ -57,9 +58,14 @@ specification.`,
 		}
 
 		filePath := args[0]
-		mime, err := opnlib.GetFileMime(filePath)
-		if err != nil {
-			log.Fatalf("Failed to get MIME type of file %s: %v\n", filePath, err)
+		var mime string
+		if mimeTypeOverride == "" {
+			mime, err = opnlib.GetFileMime(filePath)
+			if err != nil {
+				log.Fatalf("Failed to get MIME type of file %s: %v\n", filePath, err)
+			}
+		} else {
+			mime = mimeTypeOverride
 		}
 
 		type DesktopInfo struct {
@@ -405,6 +411,12 @@ ENVIRONMENT:
 		"skip-cache",
 		false,
 		"Do not use the cache. Instead, all lookups are performed on the file system.",
+	)
+	openFileCmd.Flags().StringVar(
+		&mimeTypeOverride,
+		"mime-type",
+		"",
+		"Set the mime type of the file and skip automatic determination.",
 	)
 }
 
