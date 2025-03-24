@@ -11,6 +11,10 @@ It uses xdg-mime or the file command to determine the MIME type of the
 file and the Desktop Entry and MIMEApps specification to determine the
 applications that can open the MIME type.
 
+```
+opn [flags]
+```
+
 ### Examples
 
 ```
@@ -27,7 +31,8 @@ $ opn query mime text/html
 ### Options
 
 ```
-  -h, --help   help for opn
+  -h, --help      help for opn
+      --version   Version info
 ```
 
 ### SEE ALSO
