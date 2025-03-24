@@ -11,9 +11,9 @@ in the terminal from a list of preferred applications.
 - bash/fish/zsh completions.
 - Opens both GUI and terminal applications.
 - Integrates with various tools such as:
-  - [nnn](./integrations/README.md#nnn).
-  - [JetBrains IDEs](./integrations/README.md#jetbrains-ides).
-  - [xdg-open](./integrations/README.md#xdg-open).
+  - [nnn](./integrations/README.md#nnn)
+  - [JetBrains IDEs](./integrations/README.md#jetbrains-ides)
+  - [xdg-open](./integrations/README.md#xdg-open)
 
 ## Installation
 See [Install.md](Install.md).
