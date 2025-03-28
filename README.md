@@ -92,3 +92,6 @@ See [Shared MIME info, Storing the MIME type using Extended Attributes](https://
 - Pacman/package manager hook to update cache
 - Add examples on how to change preferred applications.
 - Support DBUS activation for starting applications. Pending interest.
+- We could write our own implementation of `xdg-query mime` based on
+  [`mime.cache`](https://specifications.freedesktop.org/shared-mime-info-spec/0.21/ar01s02.html#id-1.3.12)
+  and drop the `file`/`xdg-utils` requirement though `xdg-utils` is a common dependency so it is not very likely to that dropping it will benefit the user.
