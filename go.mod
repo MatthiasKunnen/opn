@@ -3,7 +3,7 @@ module github.com/MatthiasKunnen/opn
 go 1.23.0
 
 require (
-	github.com/MatthiasKunnen/xdg v0.1.0
+	github.com/MatthiasKunnen/xdg v0.2.1
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/pkg/xattr v0.4.10
 	github.com/spf13/cobra v1.8.1

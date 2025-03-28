@@ -1,5 +1,5 @@
-github.com/MatthiasKunnen/xdg v0.1.0 h1:xJDxQNqoZWdzX1aWbUfYF/6Zll6B2jK16gChXb+TiRk=
-github.com/MatthiasKunnen/xdg v0.1.0/go.mod h1:l/HQX2nLo2pSsRkW80GqJHl1z1k0n+4a8LGxR1TVXCE=
+github.com/MatthiasKunnen/xdg v0.2.1 h1:2+ewCbKMQhUAo8aafywXEPNJyTCIcM0Ij8oATvHHS/Y=
+github.com/MatthiasKunnen/xdg v0.2.1/go.mod h1:l/HQX2nLo2pSsRkW80GqJHl1z1k0n+4a8LGxR1TVXCE=
 github.com/cpuguy83/go-md2man/v2 v2.0.4 h1:wfIWP927BUkWJb2NmU/kNDYIBTh/ziUX91+lVfRxZq4=
 github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/go-logr/logr v1.2.4 h1:g01GSCwiDw2xSZfjJ2/T9M+S6pFdcNtFYsp+Y43HYDQ=

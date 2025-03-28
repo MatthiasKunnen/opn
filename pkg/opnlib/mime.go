@@ -53,33 +53,3 @@ func GetFileMime(path string) (string, error) {
 		return strings.TrimSpace(string(output)), nil
 	}
 }
-
-// GetBroaderMimeType returns a mime type that matches the given type more broadly.
-// If no broader mime type is known, an empty string is returned.
-// E.g.
-// - application/javascript returns text/plain.
-// - text/csv returns text/plain.
-func GetBroaderMimeType(mime string) string {
-	// @TODO we might want to make this configurable.
-	// In theory, users could add all the mime→desktop id mappings manually but this would be
-	// cumbersome. Providing sensible defaults is probably the right choice but might not be perfect
-	// for everyone. Perhaps there could be a config file that overrides the defaults here.
-	switch mime {
-	case
-		"application/javascript",
-		"application/json",
-		"application/ld+json",
-		"application/xml",
-		"application/yaml",
-		"image/svg+xml":
-		return "text/plain"
-	case "text/plain":
-		return ""
-	default:
-		if strings.HasPrefix(mime, "text/") {
-			return "text/plain"
-		}
-
-		return ""
-	}
-}

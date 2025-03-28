@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MatthiasKunnen/xdg/basedir"
+	"github.com/MatthiasKunnen/xdg/sharedmimeinfo"
 	"path"
 	"time"
 )
@@ -18,6 +19,8 @@ type Opn struct {
 
 	// SkipCache determines whether loading the cache is skipped.
 	SkipCache bool
+
+	mimeSubclassInfo *sharedmimeinfo.Subclass
 }
 
 var (
@@ -50,6 +53,11 @@ func (opn *Opn) Load() error {
 		opn.index = index
 	}
 
+	opn.mimeSubclassInfo, err = sharedmimeinfo.LoadFromOs()
+	if err != nil {
+		return fmt.Errorf("failed to load subclass info: %w", err)
+	}
+
 	return nil
 }
 
@@ -79,14 +87,19 @@ type MimeDesktopIds struct {
 // E.g. text/html will also return results for text/plain.
 // The results are in order of higher priority to lower priority.
 func (opn *Opn) GetDesktopIdsForBroadMime(mimeType string) []MimeDesktopIds {
-	result := make([]MimeDesktopIds, 0)
-
-	for mimeType != "" {
-		result = append(result, MimeDesktopIds{
+	result := []MimeDesktopIds{
+		{
 			Mime:       mimeType,
 			DesktopIds: opn.GetDesktopIdsForMime(mimeType),
+		},
+	}
+
+	broaderMime := opn.mimeSubclassInfo.BroaderDfs(mimeType)
+	for _, mime := range broaderMime {
+		result = append(result, MimeDesktopIds{
+			Mime:       mime,
+			DesktopIds: opn.GetDesktopIdsForMime(mime),
 		})
-		mimeType = GetBroaderMimeType(mimeType)
 	}
 
 	return result

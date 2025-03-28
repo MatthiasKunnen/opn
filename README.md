@@ -22,7 +22,9 @@ See [Install.md](Install.md).
 ## How it works
 To determine the list of programs that are suggested for a file, the 
 [MIME Applications Specification](https://specifications.freedesktop.org/mime-apps-spec/1.0.1/)
-is used.
+and
+[Shared MIME-info specification](https://specifications.freedesktop.org/shared-mime-info-spec/0.22/)
+are used.
 
 A simplified explanation:
 - `.desktop` files, located in `$XDG_DATA_HOME/applications` and `$XDG_DATA_DIRS/applications`,
@@ -34,10 +36,11 @@ A simplified explanation:
   associates a MIME type with desktop IDs.
 - `opn` reads these desktop and `mimeapps.list` files to determine the MIME-application association.
 - When `opn file path/to/file` is executed, `xdg-mime` or `file` is used to determine the MIME type
-  of the file. Then, the MIME is looked up in the MIME-application index to find all associated
-  applications.
+  of the file.
+  The MIME type and its subclasses are then looked up in the MIME-application index to find all associated applications.
 
 ## Requirements
+- `shared-mime-info` Used for determining the subclasses of a MIME type.
 - `xdg-mime` (preferred, better accuracy, `xdg-utils` package) or `file`
 
 ## Terminal applications

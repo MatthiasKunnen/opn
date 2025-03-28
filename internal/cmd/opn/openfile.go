@@ -88,9 +88,8 @@ The MIME type is determined in this order:
 		desktopFiles := make([]*DesktopInfo, 0)
 		desktopIdsSet := make(map[string]bool)
 
-		mimeExpansion := mime
-		for mimeExpansion != "" {
-			for _, desktopId := range opn.GetDesktopIdsForMime(mimeExpansion) {
+		for _, mimeInfo := range opn.GetDesktopIdsForBroadMime(mime) {
+			for _, desktopId := range mimeInfo.DesktopIds {
 				if desktopIdsSet[desktopId] {
 					continue
 				}
@@ -130,8 +129,6 @@ The MIME type is determined in this order:
 					desktopInfo.Actions = append(desktopInfo.Actions, action)
 				}
 			}
-
-			mimeExpansion = opnlib.GetBroaderMimeType(mimeExpansion)
 		}
 
 		if len(desktopFiles) == 0 {
