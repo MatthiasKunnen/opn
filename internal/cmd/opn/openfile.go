@@ -32,8 +32,7 @@ The MIME type is determined in this order:
 	},
 }
 
-func init() {
-	openFileCmd.SetHelpTemplate(openFileCmd.HelpTemplate() + `
+const fileHelpTemplate = `
 ATTACHING TO TERMINAL:
   Applications that need a terminal can be launched in the current terminal or be opened in a new
   terminal. By default, GUI applications are started detached from the terminal and terminal
@@ -60,7 +59,10 @@ ENVIRONMENT:
     E.g. "foot", "gnome-terminal --".
   TERMINAL_COMMAND
     Lower priority alias for OPN_TERM_CMD.
-`)
+`
+
+func init() {
+	openFileCmd.SetHelpTemplate(openFileCmd.HelpTemplate() + fileHelpTemplate)
 	openFileCmd.Flags().BoolVar(
 		&skipCache,
 		"skip-cache",

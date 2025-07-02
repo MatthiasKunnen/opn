@@ -22,6 +22,9 @@ applications that can open the MIME type.`,
 	Example: `Open a file:
 $ opn file /path/to/file
 
+Open a URL:
+$ opn url https://example.com
+
 Get a list of applications that can open a file.
 $ opn query file /path/to/file
 

@@ -37,36 +37,36 @@ type valueType int
 const (
 	valueTypeFile valueType = iota
 	valueTypeUrl
-	valueTypeAny
+	valueTypeUnknown
 )
 
 type Opts struct {
 	MimeOverride string
 	SkipCache    bool
 
-	value     string
+	fileOrUrl string
 	valueType valueType
 }
 
 func Url(url string, opts Opts) {
-	opts.value = url
+	opts.fileOrUrl = url
 	opts.valueType = valueTypeUrl
-	any(opts)
+	openFileOrUrl(opts)
 }
 
 func File(filePath string, opts Opts) {
-	opts.value = filePath
+	opts.fileOrUrl = filePath
 	opts.valueType = valueTypeFile
-	any(opts)
+	openFileOrUrl(opts)
 }
 
-func Any(filePathOrUrl string, opts Opts) {
-	opts.value = filePathOrUrl
-	opts.valueType = valueTypeAny
-	any(opts)
+func FileOrUrl(fileOrUrl string, opts Opts) {
+	opts.fileOrUrl = fileOrUrl
+	opts.valueType = valueTypeUnknown
+	openFileOrUrl(opts)
 }
 
-func any(opts Opts) {
+func openFileOrUrl(opts Opts) {
 	opn := &opnlib.Opn{
 		SkipCache: opts.SkipCache,
 	}
@@ -85,16 +85,16 @@ func any(opts Opts) {
 		isFile = true
 	case valueTypeUrl:
 		isFile = false
-		parsedUrl, err = url.Parse(opts.value)
+		parsedUrl, err = url.Parse(opts.fileOrUrl)
 		if err != nil {
 			log.Fatalf("Error parsing URL: %v", err)
 		}
 
 		if !parsedUrl.IsAbs() {
-			log.Fatalf("URL must be absolute: %v", opts.value)
+			log.Fatalf("URL must be absolute: %v", opts.fileOrUrl)
 		}
-	case valueTypeAny:
-		parsedUrl, err = url.Parse(opts.value)
+	case valueTypeUnknown:
+		parsedUrl, err = url.Parse(opts.fileOrUrl)
 		if err != nil || !parsedUrl.IsAbs() {
 			isFile = true
 			parsedUrl = nil
@@ -104,7 +104,7 @@ func any(opts Opts) {
 		isFile = false
 	}
 
-	resource := opts.value
+	resource := opts.fileOrUrl
 	mime := opts.MimeOverride
 	if mime == "" && isFile {
 		// If not overriden by --mime-type, try to get extended file attribute
