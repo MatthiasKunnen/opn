@@ -10,6 +10,7 @@ import (
 	"github.com/mattn/go-shellwords"
 	"github.com/pkg/xattr"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -31,12 +32,41 @@ const (
 	Detached
 )
 
+type valueType int
+
+const (
+	valueTypeFile valueType = iota
+	valueTypeUrl
+	valueTypeAny
+)
+
 type Opts struct {
 	MimeOverride string
 	SkipCache    bool
+
+	value     string
+	valueType valueType
+}
+
+func Url(url string, opts Opts) {
+	opts.value = url
+	opts.valueType = valueTypeUrl
+	any(opts)
 }
 
 func File(filePath string, opts Opts) {
+	opts.value = filePath
+	opts.valueType = valueTypeFile
+	any(opts)
+}
+
+func Any(filePathOrUrl string, opts Opts) {
+	opts.value = filePathOrUrl
+	opts.valueType = valueTypeAny
+	any(opts)
+}
+
+func any(opts Opts) {
 	opn := &opnlib.Opn{
 		SkipCache: opts.SkipCache,
 	}
@@ -48,19 +78,50 @@ func File(filePath string, opts Opts) {
 		log.Fatalf("Error loading: %v", err)
 	}
 
+	var isFile bool
+	var parsedUrl *url.URL
+	switch opts.valueType {
+	case valueTypeFile:
+		isFile = true
+	case valueTypeUrl:
+		isFile = false
+		parsedUrl, err = url.Parse(opts.value)
+		if err != nil {
+			log.Fatalf("Error parsing URL: %v", err)
+		}
+
+		if !parsedUrl.IsAbs() {
+			log.Fatalf("URL must be absolute: %v", opts.value)
+		}
+	case valueTypeAny:
+		parsedUrl, err = url.Parse(opts.value)
+		if err != nil || !parsedUrl.IsAbs() {
+			isFile = true
+			parsedUrl = nil
+			break
+		}
+
+		isFile = false
+	}
+
+	resource := opts.value
 	mime := opts.MimeOverride
-	if mime == "" {
+	if mime == "" && isFile {
 		// If not overriden by --mime-type, try to get extended file attribute
 		var attrMime []byte
-		if attrMime, err = xattr.Get(filePath, "user.mime"); err == nil {
+		if attrMime, err = xattr.Get(resource, "user.mime"); err == nil {
 			mime = string(attrMime)
 		}
 	}
-	if mime == "" {
-		mime, err = opnlib.GetFileMime(filePath)
+	if mime == "" && isFile {
+		mime, err = opnlib.GetFileMime(resource)
 		if err != nil {
-			log.Fatalf("Failed to get MIME type of file %s: %v\n", filePath, err)
+			log.Fatalf("Failed to get MIME type of file %s: %v\n", resource, err)
 		}
+	}
+
+	if !isFile {
+		mime = "x-scheme-handler/" + parsedUrl.Scheme
 	}
 
 	type DesktopInfo struct {
@@ -122,6 +183,10 @@ func File(filePath string, opts Opts) {
 
 	for index, desktopFile := range slices.Backward(desktopFiles) {
 		fmt.Printf("%d) %s\n", index, desktopFile.Entry.Name.Default)
+
+		if isFile && !desktopFile.Entry.Exec.CanOpenUrls() {
+
+		}
 
 		for actionIndex, action := range desktopFile.Actions {
 			fmt.Printf(
@@ -194,7 +259,7 @@ inputLoop:
 	for {
 		fmt.Printf(
 			"Open %s with (?=help)[0]: ",
-			path.Base(filePath),
+			path.Base(resource),
 		)
 		scanner.Scan()
 		text := scanner.Text()
@@ -315,21 +380,38 @@ Current defaults:
 			return chosen.FilePath
 		},
 		GetFile: func() string {
-			return filePath
+			if !isFile {
+				return ""
+			}
+			return resource
 		},
 		GetFiles: func() []string {
-			return []string{filePath}
+			if !isFile {
+				return []string{}
+			}
+			return []string{resource}
 		},
 		GetName: func() string {
 			return chosen.Entry.Name.Default
 		},
 		GetUrl: func() string {
-			return filePath
+			return resource
 		},
 		GetUrls: func() []string {
-			return []string{filePath}
+			return []string{resource}
 		},
 	})
+
+	if isFile && !execVal.CanOpenFiles() {
+		// Not ideal, we don't know for sure if the program supports being launched with paths
+		// in the arguments. Unfortunately, programs don't always follow the spec.
+		log.Printf(
+			"Warning: %s does not explicitly declare support for opening a file. "+
+				"It is missing a field code in the Exec value. "+
+				"The path will be added as last argument.\n", chosen.Id)
+	} else if !isFile && !execVal.CanOpenUrls() {
+
+	}
 
 	if !execVal.CanOpenFiles() {
 		// Not ideal, we don't know for sure if the program supports being launched with paths
