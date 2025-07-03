@@ -9,7 +9,9 @@ import (
 	"github.com/MatthiasKunnen/xdg/desktop"
 	"github.com/mattn/go-shellwords"
 	"github.com/pkg/xattr"
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -82,6 +84,7 @@ type opener struct {
 	localFileMime         string
 	localFileIsDownloaded bool
 	url                   string
+	urlIsDownloadable     bool
 	urlScheme             string
 	opn                   *opnlib.Opn
 }
@@ -117,6 +120,7 @@ func newOpener(opts OpenerOpts) *opener {
 		}
 		o.url = opts.fileOrUrl
 		o.urlScheme = parsedUrl.Scheme
+		o.urlIsDownloadable = isDownloadSupported(parsedUrl.Scheme)
 	case valueTypeUnknown:
 		parsedUrl, err := url.Parse(opts.fileOrUrl)
 		if err != nil || !parsedUrl.IsAbs() {
@@ -126,6 +130,7 @@ func newOpener(opts OpenerOpts) *opener {
 
 		o.url = opts.fileOrUrl
 		o.urlScheme = parsedUrl.Scheme
+		o.urlIsDownloadable = isDownloadSupported(parsedUrl.Scheme)
 	}
 
 	return o
@@ -179,7 +184,7 @@ inputLoop:
 				break
 			}
 
-			if !o.isDownloadSupported() {
+			if !o.urlIsDownloadable {
 				fmt.Println("Download is not supported for this protocol/scheme")
 				break
 			}
@@ -409,6 +414,14 @@ func (o *opener) mustGetOptions() []*desktopInfo {
 				continue
 			}
 
+			if o.localFile == "" && !entry.Exec.CanOpenUrls() && !o.urlIsDownloadable {
+				// If opening a URL that is not downloadable, and the desktop entry cannot open
+				// URLs, exclude it.
+				// If the user downloads the file, it will become localFile and this exclusion will
+				// be skipped.
+				continue
+			}
+
 			desktopInfo := &desktopInfo{
 				Id:       desktopId,
 				FilePath: desktopFilePath,
@@ -421,6 +434,14 @@ func (o *opener) mustGetOptions() []*desktopInfo {
 				if entry.Exec.CanOpenFiles() && !action.Exec.CanOpenFiles() {
 					// If this subaction does not have a field code indicating file opening
 					// support, but the main action does, assume this is on purpose.
+					continue
+				}
+
+				if o.localFile == "" && !action.Exec.CanOpenUrls() && !o.urlIsDownloadable {
+					// If opening a URL that is not downloadable, and the desktop entry cannot open
+					// URLs, exclude it.
+					// If the user downloads the file, it will become localFile and this exclusion will
+					// be skipped.
 					continue
 				}
 
@@ -450,8 +471,8 @@ func (o *opener) getExecArg(mustBeLocal bool) string {
 	return o.localFile
 }
 
-func (o *opener) isDownloadSupported() bool {
-	switch o.urlScheme {
+func isDownloadSupported(urlScheme string) bool {
+	switch urlScheme {
 	case "http", "https":
 		return true
 	default:
@@ -464,13 +485,34 @@ func (o *opener) download() {
 		log.Fatalln("Could not download, URL is not set.")
 	}
 
-	if !o.isDownloadSupported() {
+	if !o.urlIsDownloadable {
 		log.Fatalf("Downloading is not supported for the scheme %s\n", o.urlScheme)
 	}
 
-	// @todo Download to temporary file path if possible. Report if not a URL.
-	o.updateLocalFileMime()
+	temp, err := os.CreateTemp("", "opn_download")
+	if err != nil {
+		log.Fatalf("Error creating temporary file: %v\n", err)
+	}
+	defer temp.Close()
+
+	resp, err := http.Get(o.url)
+	if err != nil {
+		log.Fatalf("Error downloading %s: %v\n", o.url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 && resp.StatusCode > 299 {
+		log.Fatalf("Bad status when dowloading: %s", resp.Status)
+	}
+
+	_, err = io.Copy(temp, resp.Body)
+	if err != nil {
+		log.Fatalf("Error writing downloaded content to file: %v\n", err)
+	}
+
+	o.localFile = temp.Name()
 	o.localFileIsDownloaded = true
+	o.updateLocalFileMime()
 }
 
 func (o *opener) getPrintHint() string {

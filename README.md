@@ -95,3 +95,5 @@ See [Shared MIME info, Storing the MIME type using Extended Attributes](https://
 - We could write our own implementation of `xdg-query mime` based on
   [`mime.cache`](https://specifications.freedesktop.org/shared-mime-info-spec/0.21/ar01s02.html#id-1.3.12)
   and drop the `file`/`xdg-utils` requirement though `xdg-utils` is a common dependency so it is not very likely to that dropping it will benefit the user.
+- Add autocomplete for opn query desktop-locations 
+- Add autocomplete for opn query mime
