@@ -22,10 +22,10 @@ temporary location where the mime type will then be determined using:
 1. The Content-Type header if it is set.
 2. The sniffed MIME type.
 `,
-	Example: `opn file foo.pdf`,
+	Example: `opn url https://example.com`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		opn.File(args[0], opn.Opts{
+		opn.Url(args[0], opn.OpenerOpts{
 			MimeOverride: mime,
 			SkipCache:    skipCache,
 		})

@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -40,7 +39,14 @@ const (
 	valueTypeUnknown
 )
 
-type Opts struct {
+type desktopInfo struct {
+	Entry    *desktop.Entry
+	FilePath string
+	Id       string
+	Actions  []desktop.Action
+}
+
+type OpenerOpts struct {
 	MimeOverride string
 	SkipCache    bool
 
@@ -48,25 +54,39 @@ type Opts struct {
 	valueType valueType
 }
 
-func Url(url string, opts Opts) {
+func Url(url string, opts OpenerOpts) {
 	opts.fileOrUrl = url
 	opts.valueType = valueTypeUrl
 	openFileOrUrl(opts)
 }
 
-func File(filePath string, opts Opts) {
+func File(filePath string, opts OpenerOpts) {
 	opts.fileOrUrl = filePath
 	opts.valueType = valueTypeFile
 	openFileOrUrl(opts)
 }
 
-func FileOrUrl(fileOrUrl string, opts Opts) {
+func FileOrUrl(fileOrUrl string, opts OpenerOpts) {
 	opts.fileOrUrl = fileOrUrl
 	opts.valueType = valueTypeUnknown
 	openFileOrUrl(opts)
 }
 
-func openFileOrUrl(opts Opts) {
+func openFileOrUrl(opts OpenerOpts) {
+	newOpener(opts).run()
+}
+
+type opener struct {
+	mimeOverride          string
+	localFile             string
+	localFileMime         string
+	localFileIsDownloaded bool
+	url                   string
+	urlScheme             string
+	opn                   *opnlib.Opn
+}
+
+func newOpener(opts OpenerOpts) *opener {
 	opn := &opnlib.Opn{
 		SkipCache: opts.SkipCache,
 	}
@@ -78,14 +98,16 @@ func openFileOrUrl(opts Opts) {
 		log.Fatalf("Error loading: %v", err)
 	}
 
-	var isFile bool
-	var parsedUrl *url.URL
+	o := &opener{
+		mimeOverride: opts.MimeOverride,
+		opn:          opn,
+	}
+
 	switch opts.valueType {
 	case valueTypeFile:
-		isFile = true
+		o.localFile = opts.fileOrUrl
 	case valueTypeUrl:
-		isFile = false
-		parsedUrl, err = url.Parse(opts.fileOrUrl)
+		parsedUrl, err := url.Parse(opts.fileOrUrl)
 		if err != nil {
 			log.Fatalf("Error parsing URL: %v", err)
 		}
@@ -93,173 +115,41 @@ func openFileOrUrl(opts Opts) {
 		if !parsedUrl.IsAbs() {
 			log.Fatalf("URL must be absolute: %v", opts.fileOrUrl)
 		}
+		o.url = opts.fileOrUrl
+		o.urlScheme = parsedUrl.Scheme
 	case valueTypeUnknown:
-		parsedUrl, err = url.Parse(opts.fileOrUrl)
+		parsedUrl, err := url.Parse(opts.fileOrUrl)
 		if err != nil || !parsedUrl.IsAbs() {
-			isFile = true
-			parsedUrl = nil
+			o.localFile = opts.fileOrUrl
 			break
 		}
 
-		isFile = false
+		o.url = opts.fileOrUrl
+		o.urlScheme = parsedUrl.Scheme
 	}
 
-	resource := opts.fileOrUrl
-	mime := opts.MimeOverride
-	if mime == "" && isFile {
-		// If not overriden by --mime-type, try to get extended file attribute
-		var attrMime []byte
-		if attrMime, err = xattr.Get(resource, "user.mime"); err == nil {
-			mime = string(attrMime)
-		}
-	}
-	if mime == "" && isFile {
-		mime, err = opnlib.GetFileMime(resource)
-		if err != nil {
-			log.Fatalf("Failed to get MIME type of file %s: %v\n", resource, err)
-		}
+	return o
+}
+
+func (o *opener) run() {
+	if o.localFile == "" && (o.url == "" || o.urlScheme == "") {
+		panic("Either localFile or both o.url && o.urlScheme must be set")
 	}
 
-	if !isFile {
-		mime = "x-scheme-handler/" + parsedUrl.Scheme
-	}
+	o.updateLocalFileMime()
+	desktopFiles := o.mustGetOptions()
 
-	type DesktopInfo struct {
-		Entry    *desktop.Entry
-		FilePath string
-		Id       string
-		Actions  []desktop.Action
-	}
-
-	desktopFiles := make([]*DesktopInfo, 0)
-	desktopIdsSet := make(map[string]bool)
-
-	for _, mimeInfo := range opn.GetDesktopIdsForBroadMime(mime) {
-		for _, desktopId := range mimeInfo.DesktopIds {
-			if desktopIdsSet[desktopId] {
-				continue
-			}
-
-			desktopIdsSet[desktopId] = true
-			var desktopParseError error
-			var entry *desktop.Entry
-			var desktopFilePath string
-			for _, desktopFilePath = range opn.GetDesktopFileLocations(desktopId) {
-				entry, desktopParseError = desktop.ParseFile(desktopFilePath)
-				if err == nil {
-					break
-				}
-
-				log.Printf("Error parsing desktop file %s: %v\n", desktopFilePath, err)
-			}
-
-			if desktopParseError != nil {
-				continue
-			}
-
-			desktopInfo := &DesktopInfo{
-				Id:       desktopId,
-				FilePath: desktopFilePath,
-				Entry:    entry,
-				Actions:  make([]desktop.Action, 0),
-			}
-			desktopFiles = append(desktopFiles, desktopInfo)
-
-			for _, action := range entry.Actions {
-				if entry.Exec.CanOpenFiles() && !action.Exec.CanOpenFiles() {
-					// If this subaction does not have a field code indicating file opening
-					// support, but the main action does, assume this is on purpose.
-					continue
-				}
-
-				desktopInfo.Actions = append(desktopInfo.Actions, action)
-			}
-		}
-	}
-
-	if len(desktopFiles) == 0 {
-		log.Fatalf("No applications found that can open \"%s\"", mime)
-	}
-
-	for index, desktopFile := range slices.Backward(desktopFiles) {
-		fmt.Printf("%d) %s\n", index, desktopFile.Entry.Name.Default)
-
-		if isFile && !desktopFile.Entry.Exec.CanOpenUrls() {
-
-		}
-
-		for actionIndex, action := range desktopFile.Actions {
-			fmt.Printf(
-				"  %d.%d) %s\n",
-				index,
-				actionIndex+1,
-				action.Name.Default,
-			)
-		}
-	}
-
-	startModeEnv := os.Getenv("OPN_START_MODE")
-	startModeTerm := Attached
-	startModeGui := Detached
-	startMode := Unset
-
-	for _, tc := range strings.Split(startModeEnv, ",") {
-		if tc == "" {
-			continue
-		}
-
-		tcParts := strings.Split(tc, ":")
-		if len(tcParts) != 2 {
-			log.Fatalf(
-				"Invalid value of OPN_START_MODE: '%s'. "+
-					"The target conf must contain a single colon.",
-				startModeEnv,
-			)
-		}
-
-		switch tcParts[0] {
-		case "gui":
-			switch tcParts[1] {
-			case "a":
-				startModeGui = Attached
-			case "d":
-				startModeGui = Detached
-			default:
-				log.Fatalf(
-					"Unknown start mode in OPN_START_MODE for gui: '%s'. "+
-						"Either 'a' or 'd' expected",
-					tcParts[1],
-				)
-			}
-		case "term":
-			switch tcParts[1] {
-			case "a":
-				startModeTerm = Attached
-			case "d":
-				startModeTerm = Detached
-			default:
-				log.Fatalf(
-					"Unknown start mode in OPN_START_MODE for terminal: '%s'. "+
-						"Either 'a' or 'd' expected",
-					tcParts[1],
-				)
-			}
-		default:
-			log.Fatalf(
-				"Unknown target in OPN_START_MODE: '%s'. Either 'gui' or 'term' expected",
-				tcParts[0],
-			)
-		}
-	}
-
+	var err error
 	mainIndex := -1
 	actionIndex := -1
+	startMode, startModeGui, startModeTerm := getDefaultStartMode()
 	scanner := bufio.NewScanner(os.Stdin)
 inputLoop:
 	for {
+		printOptions(desktopFiles)
 		fmt.Printf(
 			"Open %s with (?=help)[0]: ",
-			path.Base(resource),
+			o.getPrintHint(),
 		)
 		scanner.Scan()
 		text := scanner.Text()
@@ -278,6 +168,24 @@ inputLoop:
 			break inputLoop
 		case text == "q":
 			return
+		case text == "D":
+			if o.url == "" {
+				fmt.Println("D(ownload) is only supported for URL inputs")
+				break
+			}
+
+			if o.localFileIsDownloaded {
+				fmt.Println("File is already downloaded")
+				break
+			}
+
+			if !o.isDownloadSupported() {
+				fmt.Println("Download is not supported for this protocol/scheme")
+				break
+			}
+
+			o.download()
+			desktopFiles = o.mustGetOptions()
 		case text == "?":
 			var sb strings.Builder
 			sb.WriteString(`Choose the application to open the file with, using the respective number.
@@ -380,38 +288,21 @@ Current defaults:
 			return chosen.FilePath
 		},
 		GetFile: func() string {
-			if !isFile {
-				return ""
-			}
-			return resource
+			return o.getExecArg(true)
 		},
 		GetFiles: func() []string {
-			if !isFile {
-				return []string{}
-			}
-			return []string{resource}
+			return []string{o.getExecArg(true)}
 		},
 		GetName: func() string {
 			return chosen.Entry.Name.Default
 		},
 		GetUrl: func() string {
-			return resource
+			return o.getExecArg(false)
 		},
 		GetUrls: func() []string {
-			return []string{resource}
+			return []string{o.getExecArg(false)}
 		},
 	})
-
-	if isFile && !execVal.CanOpenFiles() {
-		// Not ideal, we don't know for sure if the program supports being launched with paths
-		// in the arguments. Unfortunately, programs don't always follow the spec.
-		log.Printf(
-			"Warning: %s does not explicitly declare support for opening a file. "+
-				"It is missing a field code in the Exec value. "+
-				"The path will be added as last argument.\n", chosen.Id)
-	} else if !isFile && !execVal.CanOpenUrls() {
-
-	}
 
 	if !execVal.CanOpenFiles() {
 		// Not ideal, we don't know for sure if the program supports being launched with paths
@@ -420,8 +311,10 @@ Current defaults:
 			"Warning: %s does not explicitly declare support for opening a file. "+
 				"It is missing a field code in the Exec value. "+
 				"The path will be added as last argument.\n", chosen.Id)
-		arguments = append(arguments, filePath)
+		arguments = append(arguments, o.getExecArg(false))
 	}
+
+	// err if url and not downloadable
 
 	if startMode == Unset {
 		if chosen.Entry.Terminal {
@@ -447,6 +340,217 @@ Current defaults:
 		startDetached(chosen.Entry.Terminal, arguments)
 	default:
 		log.Fatalln("Startmode not configured")
+	}
+
+}
+
+func (o *opener) updateLocalFileMime() {
+	if o.localFile == "" {
+		o.localFileMime = ""
+		return
+	}
+
+	if o.localFileMime == "" && !o.localFileIsDownloaded {
+		// If not overriden by --mime-type, try to get extended file attribute
+		if attrMime, err := xattr.Get(o.localFile, "user.mime"); err == nil {
+			o.localFileMime = string(attrMime)
+		}
+	}
+
+	if o.localFileMime == "" {
+		mime, err := opnlib.GetFileMime(o.localFile)
+		if err != nil {
+			log.Fatalf("Failed to get MIME type of file %s: %v\n", o.localFile, err)
+		}
+		o.localFileMime = mime
+	}
+}
+
+func (o *opener) mustGetOptions() []*desktopInfo {
+	desktopFiles := make([]*desktopInfo, 0)
+	desktopIdsSet := make(map[string]bool)
+
+	var mimes []string
+	if o.mimeOverride != "" {
+		mimes = append(mimes, o.mimeOverride)
+	} else if o.localFileMime != "" {
+		mimes = append(mimes, o.localFileMime)
+	}
+
+	if o.urlScheme != "" && !o.localFileIsDownloaded {
+		mimes = append(mimes, "x-scheme-handler/"+o.urlScheme)
+	}
+
+	var desktopIdsToSuggest []opnlib.MimeDesktopIds
+	for _, mime := range mimes {
+		desktopIdsToSuggest = append(desktopIdsToSuggest, o.opn.GetDesktopIdsForBroadMime(mime)...)
+	}
+
+	for _, mimeInfo := range desktopIdsToSuggest {
+		for _, desktopId := range mimeInfo.DesktopIds {
+			if desktopIdsSet[desktopId] {
+				continue
+			}
+
+			desktopIdsSet[desktopId] = true
+			var desktopParseError error
+			var entry *desktop.Entry
+			var desktopFilePath string
+			for _, desktopFilePath = range o.opn.GetDesktopFileLocations(desktopId) {
+				entry, desktopParseError = desktop.ParseFile(desktopFilePath)
+				if desktopParseError == nil {
+					break
+				}
+
+				log.Printf("Error parsing desktop file %s: %v\n", desktopFilePath, desktopParseError)
+			}
+
+			if desktopParseError != nil || entry == nil {
+				continue
+			}
+
+			desktopInfo := &desktopInfo{
+				Id:       desktopId,
+				FilePath: desktopFilePath,
+				Entry:    entry,
+				Actions:  make([]desktop.Action, 0),
+			}
+			desktopFiles = append(desktopFiles, desktopInfo)
+
+			for _, action := range entry.Actions {
+				if entry.Exec.CanOpenFiles() && !action.Exec.CanOpenFiles() {
+					// If this subaction does not have a field code indicating file opening
+					// support, but the main action does, assume this is on purpose.
+					continue
+				}
+
+				desktopInfo.Actions = append(desktopInfo.Actions, action)
+			}
+		}
+	}
+
+	if len(desktopFiles) == 0 {
+		log.Fatalf("No applications found that can open %v", mimes)
+	}
+
+	return desktopFiles
+}
+
+func (o *opener) getExecArg(mustBeLocal bool) string {
+	if o.localFile != "" {
+		return o.localFile
+	}
+
+	if !mustBeLocal && o.url != "" {
+		return o.url
+	}
+
+	o.download()
+
+	return o.localFile
+}
+
+func (o *opener) isDownloadSupported() bool {
+	switch o.urlScheme {
+	case "http", "https":
+		return true
+	default:
+		return false
+	}
+}
+
+func (o *opener) download() {
+	if o.url == "" {
+		log.Fatalln("Could not download, URL is not set.")
+	}
+
+	if !o.isDownloadSupported() {
+		log.Fatalf("Downloading is not supported for the scheme %s\n", o.urlScheme)
+	}
+
+	// @todo Download to temporary file path if possible. Report if not a URL.
+	o.updateLocalFileMime()
+	o.localFileIsDownloaded = true
+}
+
+func (o *opener) getPrintHint() string {
+	if o.localFile != "" {
+		return filepath.Base(o.localFile)
+	}
+
+	return o.url
+}
+
+func getDefaultStartMode() (StartMode, StartMode, StartMode) {
+	startModeEnv := os.Getenv("OPN_START_MODE")
+	startMode := Unset
+	startModeGui := Detached
+	startModeTerm := Attached
+
+	for _, tc := range strings.Split(startModeEnv, ",") {
+		if tc == "" {
+			continue
+		}
+
+		tcParts := strings.Split(tc, ":")
+		if len(tcParts) != 2 {
+			log.Fatalf(
+				"Invalid value of OPN_START_MODE: '%s'. "+
+					"The target conf must contain a single colon.",
+				startModeEnv,
+			)
+		}
+
+		switch tcParts[0] {
+		case "gui":
+			switch tcParts[1] {
+			case "a":
+				startModeGui = Attached
+			case "d":
+				startModeGui = Detached
+			default:
+				log.Fatalf(
+					"Unknown start mode in OPN_START_MODE for gui: '%s'. "+
+						"Either 'a' or 'd' expected",
+					tcParts[1],
+				)
+			}
+		case "term":
+			switch tcParts[1] {
+			case "a":
+				startModeTerm = Attached
+			case "d":
+				startModeTerm = Detached
+			default:
+				log.Fatalf(
+					"Unknown start mode in OPN_START_MODE for terminal: '%s'. "+
+						"Either 'a' or 'd' expected",
+					tcParts[1],
+				)
+			}
+		default:
+			log.Fatalf(
+				"Unknown target in OPN_START_MODE: '%s'. Either 'gui' or 'term' expected",
+				tcParts[0],
+			)
+		}
+	}
+
+	return startMode, startModeGui, startModeTerm
+}
+
+func printOptions(desktopFiles []*desktopInfo) {
+	for index, desktopFile := range slices.Backward(desktopFiles) {
+		fmt.Printf("%d) %s\n", index, desktopFile.Entry.Name.Default)
+
+		for actionIndex, action := range desktopFile.Actions {
+			fmt.Printf(
+				"  %d.%d) %s\n",
+				index,
+				actionIndex+1,
+				action.Name.Default,
+			)
+		}
 	}
 }
 

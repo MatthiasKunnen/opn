@@ -25,7 +25,7 @@ The MIME type is determined in this order:
 	Example: `opn file foo.pdf`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		opn.File(args[0], opn.Opts{
+		opn.File(args[0], opn.OpenerOpts{
 			MimeOverride: mime,
 			SkipCache:    skipCache,
 		})
