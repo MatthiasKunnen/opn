@@ -100,7 +100,7 @@ The MIME type is determined in this order:
 				var desktopFilePath string
 				for _, desktopFilePath = range opn.GetDesktopFileLocations(desktopId) {
 					entry, desktopParseError = desktop.ParseFile(desktopFilePath)
-					if err == nil {
+					if desktopParseError == nil {
 						break
 					}
 
