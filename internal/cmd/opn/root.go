@@ -19,8 +19,14 @@ associated application.
 It uses xdg-mime or the file command to determine the MIME type of the
 file and the Desktop Entry and MIMEApps specification to determine the
 applications that can open the MIME type.`,
-	Example: `Open a file:
+	Example: `Open a file/URL:
+$ opn resource foo.pdf
+
+Open a file:
 $ opn file /path/to/file
+
+Open a URL:
+$ opn url https://example.com
 
 Get a list of applications that can open a file.
 $ opn query file /path/to/file
@@ -54,6 +60,8 @@ func init() {
 
 	rootCmd.AddCommand(cache.CacheCmd)
 	rootCmd.AddCommand(openFileCmd)
+	rootCmd.AddCommand(openResourceCmd)
+	rootCmd.AddCommand(openUrlCmd)
 	rootCmd.AddCommand(openWithSignalCmd)
 	rootCmd.AddCommand(query.QueryCmd)
 	rootCmd.Flags().BoolVar(&versionRequested, "version", false, "Version info")

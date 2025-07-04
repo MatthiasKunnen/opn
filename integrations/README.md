@@ -62,12 +62,12 @@ While the exact contents of the script will depend on the emulator used, here is
 export OPN_TERM_CMD="gnome-terminal --"
 
 if [ -t 0 ]; then
-	opn file "$@"
+	opn resource "$@"
 	status=$?
 else
 	# If we are not in a terminal, launch a terminal to show opn.
 	# We specify to open everything detached so the terminal closes after launching.
-	OPN_START_MODE="gui:d,term:d" foot -a launcher opn file "$@"
+	OPN_START_MODE="gui:d,term:d" foot -a launcher opn resource "$@"
 	status=$?
 fi
 

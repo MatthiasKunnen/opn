@@ -18,8 +18,14 @@ opn [flags]
 ### Examples
 
 ```
+Open a file/URL:
+$ opn resource foo.pdf
+
 Open a file:
 $ opn file /path/to/file
+
+Open a URL:
+$ opn url https://example.com
 
 Get a list of applications that can open a file.
 $ opn query file /path/to/file
@@ -40,4 +46,6 @@ $ opn query mime text/html
 * [opn cache](opn_cache.md)	 - Update and view info of the cache
 * [opn file](opn_file.md)	 - Open the given file
 * [opn query](opn_query.md)	 - Query the associations and desktop IDs
+* [opn resource](opn_resource.md)	 - Open the given resource (file or URL)
+* [opn url](opn_url.md)	 - Open the given URL
 
