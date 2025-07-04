@@ -319,8 +319,6 @@ Current defaults:
 		arguments = append(arguments, o.getExecArg(false))
 	}
 
-	// err if url and not downloadable
-
 	if startMode == Unset {
 		if chosen.Entry.Terminal {
 			startMode = startModeTerm
@@ -489,6 +487,8 @@ func (o *opener) download() {
 		log.Fatalf("Downloading is not supported for the scheme %s\n", o.urlScheme)
 	}
 
+	log.Println("Downloading...")
+
 	temp, err := os.CreateTemp("", "opn_download")
 	if err != nil {
 		log.Fatalf("Error creating temporary file: %v\n", err)
@@ -508,6 +508,11 @@ func (o *opener) download() {
 	_, err = io.Copy(temp, resp.Body)
 	if err != nil {
 		log.Fatalf("Error writing downloaded content to file: %v\n", err)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "" {
+		o.localFileMime = contentType
 	}
 
 	o.localFile = temp.Name()
