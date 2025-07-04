@@ -111,6 +111,10 @@ The MIME type is determined in this order:
 					continue
 				}
 
+				if entry.NoDisplay {
+					continue
+				}
+
 				desktopInfo := &DesktopInfo{
 					Id:       desktopId,
 					FilePath: desktopFilePath,
